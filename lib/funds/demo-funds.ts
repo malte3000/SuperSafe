@@ -2,6 +2,7 @@ import type { Fund } from './types';
 
 export const demoFunds: Fund[] = [
   {
+    source: 'demo',
     name: 'SuperSafe Global Demo',
     category: 'Global aktiefond · Demodata',
     riskClass: 4,
@@ -20,6 +21,7 @@ export const demoFunds: Fund[] = [
     ],
   },
   {
+    source: 'demo',
     name: 'SuperSafe Sverige Demo',
     category: 'Svensk aktiefond · Demodata',
     riskClass: 4,

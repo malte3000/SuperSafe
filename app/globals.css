@@ -80,6 +80,14 @@
 .search-shell { display: flex; align-items: center; gap: 10px; max-width: 790px; padding: 7px 7px 7px 16px; border-radius: 16px; background: rgba(255,255,255,.9); border: 1px solid rgba(19,106,78,.18); box-shadow: 0 16px 35px rgba(24,72,53,.09); }
 .demo-chip { padding: 5px 9px; border: 1px solid rgba(20,105,77,.16); border-radius: 999px; background: rgba(255,255,255,.55); transition: .18s ease; }
 .demo-chip:hover { color: #0a5e42; border-color: rgba(20,105,77,.35); background: white; }
+.fund-results { display: grid; max-width: 790px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(19,106,78,.14); border-radius: 14px; background: rgba(255,255,255,.92); box-shadow: 0 14px 32px rgba(24,72,53,.08); }
+.fund-results button { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 11px 15px; text-align: left; transition: .16s ease; }
+.fund-results button + button { border-top: 1px solid rgba(19,106,78,.1); }
+.fund-results button:hover, .fund-results button:focus-visible { background: #eff8f2; outline: none; }
+.fund-results span { display: grid; min-width: 0; }
+.fund-results strong { overflow: hidden; color: #123c2e; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.fund-results small { overflow: hidden; margin-top: 2px; color: #668076; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.fund-results code { flex: none; color: #327159; font-family: var(--font-geist-mono); font-size: 10px; }
 .overview-grid { display: grid; grid-template-columns: minmax(0,1.65fr) minmax(250px,.75fr) minmax(220px,.6fr); gap: 16px; }
 .score-card, .panel-card, .holdings-card { background: rgba(255,255,255,.91); border: 1px solid rgba(27,81,61,.12); box-shadow: 0 4px 18px rgba(25,65,51,.035); }
 .score-card { display: flex; align-items: center; gap: 30px; min-height: 282px; padding: 30px; border-radius: 20px; }
@@ -133,6 +141,7 @@
   .search-shell > svg { margin-top: 14px; }
   .search-shell input { width: calc(100% - 30px); }
   .search-shell button { width: 100%; }
+  .fund-results button { align-items: flex-start; flex-direction: column; gap: 5px; }
   .overview-grid { grid-template-columns: 1fr; }
   .score-card { align-items: flex-start; flex-direction: column; gap: 22px; padding: 23px; }
   .score-dial { flex-basis: 145px; width: 145px; }
