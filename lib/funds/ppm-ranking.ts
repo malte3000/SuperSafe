@@ -21,6 +21,7 @@ export type PpmRanking = {
   stale: boolean;
   sourceUnavailable: boolean;
   funds: PpmWinner[];
+  collection?: { lastSuccessAt: string | null; stale: boolean; unavailable: boolean };
 };
 
 export function isIsoDate(value: string): boolean {
@@ -82,10 +83,11 @@ export function parsePpmCsv(text: string, now = new Date()): PpmQuote[] {
   }
   const quotes: PpmQuote[] = [];
   const seen = new Set<string>();
+  const today = stockholmDate(now);
   for (const row of rows.slice(1)) {
     const nav = Number((row[3] ?? '').replace(/\s/g, '').replace(',', '.'));
     const quote = { id: row[0] ?? '', name: row[1] ?? '', nav, date: row[4] ?? '' };
-    if (row.length !== 5 || !validQuote(quote, stockholmDate(now)) || seen.has(quote.id)) {
+    if (row.length !== 5 || !validQuote(quote, today) || seen.has(quote.id)) {
       throw new Error('Invalid or duplicate PPM quote');
     }
     seen.add(quote.id);
@@ -141,4 +143,43 @@ export function rankPpmFunds(snapshots: PpmSnapshot[], now = new Date()): PpmRan
     };
   }
   return result;
+}
+
+export const PPM_ARCHIVE_URL = 'https://raw.githubusercontent.com/malte3000/SuperSafe/main/data/ppm/recent.json';
+export const PPM_COLLECTION_URL = 'https://github.com/malte3000/SuperSafe/actions/workflows/collect-ppm.yml';
+export type PpmArchive = { schemaVersion: 1; source: string; currency: 'SEK'; lastSuccessAt: string; snapshots: PpmSnapshot[] };
+
+// Validate every record before an external archive can enter the ranking.
+export function parsePpmArchive(value: unknown, now = new Date()): PpmArchive {
+  if (!value || typeof value !== 'object') throw new Error('Invalid archive');
+  const archive = value as PpmArchive;
+  if (archive.schemaVersion !== 1 || archive.source !== PPM_QUOTES_URL || archive.currency !== 'SEK'
+    || !Array.isArray(archive.snapshots) || archive.snapshots.length < 1 || archive.snapshots.length > 48) throw new Error('Invalid archive metadata');
+  let previousTime = -Infinity;
+  const snapshots = archive.snapshots.map(snapshot => {
+    if (!snapshot || typeof snapshot.fetchedAt !== 'string') throw new Error('Invalid snapshot');
+    const time = Date.parse(snapshot.fetchedAt);
+    if (!Number.isFinite(time) || snapshot.fetchedAt !== new Date(time).toISOString() || time <= previousTime || time > now.getTime()
+      || !Array.isArray(snapshot.quotes) || snapshot.quotes.length < 100 || snapshot.quotes.length > 2000) throw new Error('Invalid snapshot metadata');
+    previousTime = time;
+    const seen = new Set<string>();
+    const collectionDate = stockholmDate(new Date(time));
+    const quotes = snapshot.quotes.map(quote => {
+      if (!quote || typeof quote.id !== 'string' || typeof quote.date !== 'string'
+        || !validQuote(quote, collectionDate) || seen.has(quote.id)) throw new Error('Invalid archive quote');
+      seen.add(quote.id);
+      return { id: quote.id, name: quote.name, date: quote.date, nav: quote.nav };
+    });
+    return { fetchedAt: snapshot.fetchedAt, quotes };
+  });
+  if (archive.lastSuccessAt !== snapshots.at(-1)!.fetchedAt) throw new Error('Invalid collection timestamp');
+  return { schemaVersion: 1, source: PPM_QUOTES_URL, currency: 'SEK', lastSuccessAt: archive.lastSuccessAt, snapshots };
+}
+
+export function appendPpmSnapshot(previous: PpmArchive | null, snapshot: PpmSnapshot, now = new Date()): PpmArchive {
+  if (previous) parsePpmArchive(previous, now);
+  if (previous && Date.parse(snapshot.fetchedAt) <= Date.parse(previous.lastSuccessAt)) throw new Error('Collection did not advance');
+  const snapshots = [...(previous?.snapshots ?? []), snapshot]
+    .filter(item => Date.parse(item.fetchedAt) >= now.getTime() - 10 * 86400000).slice(-48);
+  return parsePpmArchive({ schemaVersion: 1, source: PPM_QUOTES_URL, currency: 'SEK', lastSuccessAt: snapshot.fetchedAt, snapshots }, now);
 }

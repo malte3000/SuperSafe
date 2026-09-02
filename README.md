@@ -61,7 +61,13 @@ fem fonder finns visar sidan ett vänteläge, utan konstruerade kursförändring
 Lyckade hämtningar sparas i R2-bindningen `PPM_DATA` (lokalt i Wrangler-lagringen).
 API-anrop hämtar nytt underlag högst en gång i timmen efter en lyckad hämtning.
 Sidan anropar API:t vid öppning, manuellt och varje timme medan sidan är öppen.
-Det finns inget fristående bakgrundsjobb: sidan behöver användas på flera kursdagar.
+Ett separat GitHub Actions-jobb samlar dessutom kurser fyra gånger per dygn,
+utan sidbesök eller en påslagen personlig dator. Se `scripts/PPM-COLLECTION.md`.
+Sidan läser jobbets offentliga historik högst en gång i timmen och sparar en
+senast fungerande kopia i R2. Senaste bakgrundsinsamling visas separat från
+kursdatum, med varning efter 18 timmar utan ny insamling. GitHub kan försena
+körningar; schemat är ingen leveranstidsgaranti. Avgiftslistorna och FI-data
+omfattas inte av detta insamlingsjobb.
 Vid källfel behålls senaste lyckade underlag och en varning visas.
 
 Beräkningstester (Node 24): `node --test tests/ppm-ranking.test.mjs`.

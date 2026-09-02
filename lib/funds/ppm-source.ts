@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import baseline from './ppm-baseline.json';
+import { loadPpmArchive } from './ppm-archive-source';
 import { PPM_QUOTES_URL, decodePpmCsv, parsePpmCsv, rankPpmFunds, stockholmDate, type PpmRanking, type PpmSnapshot } from './ppm-ranking';
 
 const CACHE_MS = 60 * 60 * 1000;
@@ -15,6 +16,7 @@ function getStorage(): R2Bucket {
 async function loadRanking(): Promise<PpmRanking> {
   const now = new Date();
   const bucket = getStorage();
+  const archiveRequest = loadPpmArchive(bucket, now);
   const cached = await bucket.get('ppm/latest.json');
   let latest = cached ? await cached.json<PpmSnapshot>() : seed;
   let sourceUnavailable = false;
@@ -50,7 +52,9 @@ async function loadRanking(): Promise<PpmRanking> {
     return object ? object.json<PpmSnapshot>() : null;
   }));
   for (const snapshot of history) if (snapshot) snapshots.push(snapshot);
-  return { ...rankPpmFunds(snapshots, now), sourceUnavailable };
+  const archive = await archiveRequest;
+  snapshots.push(...archive.snapshots);
+  return { ...rankPpmFunds(snapshots, now), sourceUnavailable, collection: archive.collection };
 }
 
 export async function getPpmRanking(): Promise<PpmRanking> {

@@ -1,0 +1,45 @@
+name: Collect PPM fund prices
+
+on:
+  schedule:
+    - cron: '23 0,6,12,18 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/collect-ppm.yml'
+      - 'scripts/collect-ppm.mjs'
+      - 'lib/funds/ppm-ranking.ts'
+      - 'tests/ppm-collector.test.mjs'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ppm-collection
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.repository == 'malte3000/SuperSafe' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Test collector and data validation
+        run: node --test tests/ppm-ranking.test.mjs tests/ppm-collector.test.mjs
+      - name: Collect and validate official prices
+        run: node scripts/collect-ppm.mjs
+      - name: Save public price history
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/ppm/recent.json data/ppm/snapshots
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: collect official PPM prices'
+          git push origin HEAD:main

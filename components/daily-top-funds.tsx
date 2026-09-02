@@ -5,7 +5,7 @@ import { ArrowUpRight, Clock3, ExternalLink, Info, RefreshCw, Trophy } from 'luc
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
-import { PPM_SOURCE_URL, type PpmRanking } from '@/lib/funds/ppm-ranking';
+import { PPM_SOURCE_URL, PPM_COLLECTION_URL, type PpmRanking } from '@/lib/funds/ppm-ranking';
 
 const percent = new Intl.NumberFormat('sv-SE', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero' });
 
@@ -78,7 +78,7 @@ export function DailyTopFunds() {
             <div>
               <h3>Väntar på två jämförbara kursdagar</h3>
               <p>{ranking.latestQuoteDate ? `Senaste sparade kursdatum är ${displayDate(ranking.latestQuoteDate)}. ` : ''}Den officiella filen innehåller bara senaste kursen per fond. Vi behöver samla kurser från två på varandra följande vardagar för minst fem fonder innan listan kan visas.</p>
-              <small>Underlaget sparas när sidan används. Listan aktiveras automatiskt när tillräcklig dagsdata finns – ingen demodata används här.</small>
+              <small>Fondkurser samlas enligt schema även utan sidbesök. Listan aktiveras när tillräcklig jämförbar dagsdata finns – ingen demodata används här.</small>
             </div>
           </div>
         )}
@@ -103,6 +103,15 @@ export function DailyTopFunds() {
           </>
         )}
       </div>
+      {ranking?.collection && <div className="daily-top-notice">
+        <p><strong>Automatisk kursinsamling</strong> · Fyra schemalagda körningar per dygn, oberoende av sidbesök.</p>
+        <p>{ranking.collection.lastSuccessAt
+          ? `Senast sparad insamling: ${new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Stockholm' }).format(new Date(ranking.collection.lastSuccessAt))} (svensk tid).`
+          : 'Ingen lyckad bakgrundsinsamling har kunnat bekräftas ännu.'}</p>
+        {ranking.collection.unavailable && <p>Insamlingsarkivet kunde inte uppdateras. Tidigare underlag och direkt hämtade kurser används när de finns.</p>}
+        {ranking.collection.stale && ranking.collection.lastSuccessAt && <p>Ingen ny bakgrundsinsamling har bekräftats på över 18 timmar. Kontrollera körningarna.</p>}
+        <p>Insamlingstid är inte kursdatum. Schemalagda körningar kan försenas. <a className="underline" href={PPM_COLLECTION_URL} target="_blank" rel="noopener noreferrer">Se insamlingsstatus på GitHub</a></p>
+      </div>}
       <div className="daily-top-footer">
         <a href={PPM_SOURCE_URL} target="_blank" rel="noopener noreferrer">Källa: Pensionsmyndigheten <ExternalLink aria-hidden="true" /></a>
         <span>{ranking?.fetchedAt ? `Underlag hämtat ${displayDate(ranking.fetchedAt)}` : 'Dagliga kurser, inte realtid'} · Inte investeringsrådgivning</span>
