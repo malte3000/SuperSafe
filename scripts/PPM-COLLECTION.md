@@ -23,6 +23,14 @@ times, with a 30-second timeout each. Feed format, IDs, dates, duplicates,
 positive prices and bounded record count are checked. These checks cannot
 guarantee that every upstream figure is correct.
 
+Collection also rejects loss of more than 20% of previously observed fund IDs
+and backwards price dates for matching IDs. A legitimate large fund-universe
+change may therefore require manual review; limits are not relaxed automatically.
+The daily ranking excludes name mismatches and moves above +/-25% per comparison
+day, with explicit flags. These observations are still archived, not deleted.
+The threshold is a review heuristic, not proof of an incorrect price. Corrected
+source data is evaluated again; no unsupported ISIN/share-class mapping is inferred.
+
 Run tests: `node --test tests/ppm-ranking.test.mjs tests/ppm-collector.test.mjs`.
 Run collection: `node scripts/collect-ppm.mjs` (writes only `data/ppm`).
 For local smoke tests, pass a separate output directory as the first argument.

@@ -73,6 +73,30 @@ Vid källfel behålls senaste lyckade underlag och en varning visas.
 Beräkningstester (Node 24): `node --test tests/ppm-ranking.test.mjs`.
 `SITE_ORIGIN` kan sättas till den betrodda publicerade sidans origin för delningsmetadata.
 
+## Datakontroller
+
+PPM-kursflödet och GitHub-insamlingen använder samma `assertPpmUpdate`:
+giltiga unika sexsiffriga fondnummer, positiva decimaltal (inte exponent-/hexformat),
+giltiga kursdatum som inte ligger efter hämtningen, högst 2 000 och minst 100 rader.
+En uppdatering avvisas om över 20 % av tidigare fondnummer försvinner eller något
+matchande fondnummer får ett tidigare kursdatum. Hela tidigare underlaget behålls;
+felorsak visas på sidan. Även verkliga utbudsändringar/korrigeringar kan stoppas och
+behöva manuell granskning. Ingen automatisk sänkning av gränserna görs.
+
+Rankningen matchar PPM-fondnummer och jämför normaliserade namn (skiftläge och
+mellanslag ignoreras, inte andelsklassbeteckningar). Ändrade namn eller absolut
+dagsförändring över 25 % flaggas och utesluts med motivering och fondlänk. Gränsen
+är SuperSafes tekniska granskningsregel, inte ett påstående att siffran är fel.
+Underliggande observationer bevaras. Om färre än fem återstår visas ingen topplista
+för jämförelsen och ingen äldre topplista används för att dölja spärren.
+Saknade föregående vardagskurser redovisas separat. Valutan är SEK enligt den fasta
+PPM-källan och arkivets valutaschema; ingen växling eller ISIN-andelsklasskoppling görs.
+
+Avgiftsflödet avvisar uppdateringar som tappar över 20 % av tidigare fondnummer
+eller antalet kända avgifter. Befintliga åldersgränser, källmarkeringar och
+snabbvisning gäller fortfarande. Kontrollerna garanterar inte riktiga källvärden
+eller framtida fondavkastning. FI-import och prognosmodeller ändras inte i detta steg.
+
 ## Snabb visning och uppdatering
 
 Daglig topplista och avgiftslistor använder två steg vid öppning och uppdatering.

@@ -1,4 +1,4 @@
-import { PPM_ARCHIVE_URL, parsePpmArchive, type PpmArchive } from './ppm-ranking';
+import { PPM_ARCHIVE_URL, assertPpmUpdate, parsePpmArchive, type PpmArchive } from './ppm-ranking';
 
 type CachedArchive = { checkedAt: string; unavailable: boolean; archive: PpmArchive | null };
 
@@ -19,6 +19,7 @@ export async function loadPpmArchive(bucket: R2Bucket, now: Date, readOnly = fal
         if (body.length > 6_000_000) throw new Error('Collector archive exceeds size limit');
         const archive = parsePpmArchive(JSON.parse(body), now);
         if (state.archive && archive.lastSuccessAt < state.archive.lastSuccessAt) throw new Error('Collector archive moved backwards');
+        if (state.archive && archive.lastSuccessAt > state.archive.lastSuccessAt) assertPpmUpdate(state.archive.snapshots.at(-1)!, archive.snapshots.at(-1)!, now);
         state = { checkedAt: now.toISOString(), unavailable: false, archive };
       } catch {
         state = { ...state, checkedAt: now.toISOString(), unavailable: true };

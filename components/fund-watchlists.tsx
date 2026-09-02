@@ -57,7 +57,7 @@ export function FundWatchlists() {
       {loading && !data && <output className="watch-notice block">Hämtar fondkategorier och avgifter…</output>}
       {refreshing && data && <output className="watch-notice block">Sparat underlag visas. Kontrollerar uppdateringar i bakgrunden…</output>}
       {error && <p className="watch-notice" role="alert">Listorna kunde inte uppdateras. Senast hämtat underlag behålls när det finns. Försök igen med Uppdatera.</p>}
-      {data?.sourceUnavailable && <p className="watch-notice">Källan kunde inte nås. Senaste sparade underlag används; kontrollera hämtningsdatumet.</p>}
+      {data?.sourceUnavailable && <p className="watch-notice">{data.qualityRejected ? 'Nytt avgiftsunderlag klarade inte datakontrollerna.' : 'Källan kunde inte nås.'} Senaste sparade underlag används; kontrollera hämtningsdatumet.</p>}
       {data?.expired && <p className="watch-notice">Underlaget är för gammalt för ett aktuellt urval. Listorna visas igen när en ny hämtning lyckas.</p>}
     </div>
     {data && !data.expired && <>
@@ -73,6 +73,7 @@ export function FundWatchlists() {
       <p>Detta är SuperSafes avgiftsurval, inte Pensionsmyndighetens rekommendation. Vi använder källans fondtyp och kategori, med minst fem jämförbara fonder per grupp. Medianen beräknas av oss på dessa fonder, inklusive den granskade fonden.</p>
       <p>”Hålla koll på” kräver minst 25 % och minst 0,05 procentenheter lägre avgift än medianen. ”Granska extra” kräver motsvarande högre avgift. Urvalet sorteras efter relativ avgiftsskillnad, med högst två fonder per kategori och tio per lista. Det är inte en kvalitetsranking.</p>
       <p>Saknade eller ogiltiga avgifter, fonder med statusmeddelande från källan och för små kategorier utesluts. Nollavgift räknas bara när källan uttryckligen anger noll. En fond kan saknas i våra FI-baserade sökfält även om den finns på denna lista.</p>
+      <p>En uppdatering stoppas om över 20 % av tidigare fondnummer eller antalet kända avgifter försvinner. Tidigare underlag behålls med varning. Gränsen är en teknisk kontroll; även verkliga förändringar i fondutbudet kan behöva granskas.</p>
       <p>Vi hämtar källan när sidan används, högst var sjätte timme efter en lyckad hämtning. Ingen oberoende bakgrundsinsamling är aktiverad. Underlag äldre än sju dygn döljs. Avgifterna kan ha ändrats sedan hämtningen; kontrollera aktuella villkor hos källan. Historisk avkastning och innehav används inte i denna första urvalsmodell.</p>
       <p><a href={WATCHLIST_SOURCE} target="_blank" rel="noopener noreferrer">Pensionsmyndighetens fondtorg</a> · <a href={WATCHLIST_FEES_SOURCE} target="_blank" rel="noopener noreferrer">Om avgifter och rabatter</a></p>
     </details>

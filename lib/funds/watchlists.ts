@@ -10,6 +10,7 @@ export type WatchCandidate = WatchFund & { fee: number; median: number; peerCoun
 export type WatchlistData = {
   fetchedAt: string; expired: boolean; sourceUnavailable: boolean; totalFunds: number;
   eligibleFunds: number; watch: WatchCandidate[]; review: WatchCandidate[]; peers: WatchCandidate[];
+  qualityRejected?: boolean;
 };
 
 export function parseWatchSource(value: unknown): WatchFund[] {
@@ -40,6 +41,15 @@ export function parseWatchSource(value: unknown): WatchFund[] {
 
 export function watchCategoryKey(fund: WatchFund) {
   return `${fund.type}:${fund.categoryId}`;
+}
+
+export function assertWatchUpdate(previous: WatchSnapshot, next: WatchSnapshot) {
+  const nextIds = new Set(next.funds.map(fund => fund.id));
+  const retained = previous.funds.filter(fund => nextIds.has(fund.id)).length;
+  if (retained < previous.funds.length * 0.8) throw new Error('Fund coverage dropped by more than 20 percent');
+  const previousFees = previous.funds.filter(fund => fund.fee !== null).length;
+  const nextFees = next.funds.filter(fund => fund.fee !== null).length;
+  if (nextFees < previousFees * 0.8) throw new Error('Fee coverage dropped by more than 20 percent');
 }
 
 export function buildWatchlists(snapshot: WatchSnapshot, now = new Date()): WatchlistData {

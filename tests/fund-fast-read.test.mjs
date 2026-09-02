@@ -106,3 +106,35 @@ test('fast read works with empty storage and never fetches the source', async t 
   assert.equal(lists.fetchedAt, watch.fetchedAt);
   assert.equal(calls, 0); assert.equal(writes, 0);
 });
+
+test('rejected PPM identity loss preserves prices, timestamp and warning on fast reads', async t => {
+  seed();
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const before = JSON.parse(memory.get('ppm/latest.json'));
+  const csv = 'Fondnr;Fondnamn;Köpkurs;Säljkurs;Kursdatum\n' + Array.from({ length: 100 }, (_, i) => `${900000 + i};Testfond;100;100;2026-09-01`).join('\n');
+  globalThis.fetch = async url => typeof url === 'string' && url.endsWith('kurser.csv') ? new Response(Buffer.from(csv, 'latin1')) : new Response('', { status: 503 });
+  const result = await getPpmRanking();
+  assert.equal(result.sourceIssue, 'coverage_drop');
+  const after = JSON.parse(memory.get('ppm/latest.json'));
+  assert.equal(after.fetchedAt, before.fetchedAt);
+  assert.deepEqual(after.quotes, before.quotes);
+  assert.equal((await getPpmRanking(true)).sourceIssue, 'coverage_drop');
+  assert.ok(![...memory.keys()].some(key => key.startsWith('ppm/days/')));
+});
+
+test('watchlist distinguishes malformed data from outage while keeping previous lists', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  for (const malformed of [true, false]) {
+    seed();
+    const before = JSON.parse(memory.get('watchlist/latest.json'));
+    globalThis.fetch = async () => malformed ? new Response('{}') : new Response('', { status: 503 });
+    const result = await getWatchlists();
+    assert.equal(result.sourceUnavailable, true);
+    assert.equal(result.qualityRejected, malformed);
+    assert.equal(result.fetchedAt, before.fetchedAt);
+    assert.deepEqual(JSON.parse(memory.get('watchlist/latest.json')).funds, before.funds);
+    assert.equal((await getWatchlists(true)).qualityRejected, malformed);
+  }
+});

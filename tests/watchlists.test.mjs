@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildWatchlists, parseWatchSource, watchCategoryKey } from '../lib/funds/watchlists.ts';
+import { assertWatchUpdate, buildWatchlists, parseWatchSource, watchCategoryKey } from '../lib/funds/watchlists.ts';
 
 const date = '2026-09-02T12:00:00Z';
 const now = new Date(date);
@@ -14,6 +14,21 @@ const source = () => ({ numberOfHits: 100, totalNumberOfFunds: 100,
   fondLista: Array.from({ length: 100 }, (_, i) => ({ fondId: String(100000 + i),
     fondNamn: `Fond ${i}`, kategoriId: 1, fondKategoriNamn: 'Global', fondTypNamn: 'Aktiefonder',
     forvaltningsArvode: '0,25', subtitle: null })) });
+
+test('update gate catches lost identities and fees, including the exact 20 percent boundary', () => {
+  const previous = { fetchedAt: date, funds: funds(Array(100).fill(0)) };
+  const next = { fetchedAt: date, funds: previous.funds.slice(0, 80) };
+  assert.doesNotThrow(() => assertWatchUpdate(previous, next));
+  assert.throws(() => assertWatchUpdate(previous, { ...next, funds: next.funds.slice(1) }));
+  const missingFees = structuredClone(previous);
+  missingFees.funds.slice(0, 20).forEach(f => { f.fee = null; });
+  assert.doesNotThrow(() => assertWatchUpdate(previous, missingFees));
+  missingFees.funds[20].fee = null;
+  assert.throws(() => assertWatchUpdate(previous, missingFees));
+  const replaced = structuredClone(previous);
+  replaced.funds.forEach(f => { f.id = String(Number(f.id) + 1000); });
+  assert.throws(() => assertWatchUpdate(previous, replaced));
+});
 
 test('odd and even category medians retain precision', () => {
   assert.equal(build(funds([0, .1, .2, .3, .4])).peers[0].median, .2);
