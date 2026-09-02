@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useFundData } from '@/components/use-fund-data';
 import { ArrowUpRight, Clock3, ExternalLink, Info, RefreshCw, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,28 +14,7 @@ function displayDate(value: string) {
 }
 
 export function DailyTopFunds() {
-  const [ranking, setRanking] = useState<PpmRanking | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const refresh = useCallback((signal?: AbortSignal) => {
-    return fetch('/api/funds/top-daily', { signal }).then(async response => {
-      if (!response.ok) throw new Error('Ranking unavailable');
-      const data = await response.json() as PpmRanking;
-      if (!signal?.aborted) { setRanking(data); setError(false); }
-    }).catch(() => {
-      if (!signal?.aborted) setError(true);
-    }).finally(() => {
-      if (!signal?.aborted) setLoading(false);
-    });
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void refresh(controller.signal);
-    const timer = window.setInterval(() => { setLoading(true); void refresh(controller.signal); }, 60 * 60 * 1000);
-    return () => { controller.abort(); window.clearInterval(timer); };
-  }, [refresh]);
+  const { data: ranking, loading, refreshing, error, refresh } = useFundData<PpmRanking>('/api/funds/top-daily', 3600000);
 
   return (
     <section className="daily-top-card" aria-labelledby="daily-top-title" aria-busy={loading}>
@@ -61,14 +40,15 @@ export function DailyTopFunds() {
               <p className="text-xs leading-5 text-muted-foreground">Kurslistan släpar normalt 1–2 dagar efter. Saknade kursdagar, exempelvis helgdagar, kan begränsa jämförelsen. Historiska vinnare är ingen prognos eller köprekommendation.</p>
             </PopoverContent>
           </Popover>
-          <Button variant="ghost" size="sm" onClick={() => { setLoading(true); void refresh(); }} disabled={loading} aria-label="Uppdatera topplistan">
-            <RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden="true" /> Uppdatera
+          <Button variant="ghost" size="sm" onClick={refresh} disabled={refreshing} aria-label="Uppdatera topplistan">
+            <RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" /> Uppdatera
           </Button>
         </div>
       </div>
 
       <div aria-live="polite">
         {loading && !ranking && <p className="daily-top-notice">Hämtar officiella fondkurser…</p>}
+        {refreshing && ranking && <output className="daily-top-notice block">Sparat underlag visas. Kontrollerar uppdateringar i bakgrunden…</output>}
         {error && <p className="daily-top-notice" role="alert">Topplistan kunde inte uppdateras. {ranking ? 'Senast hämtat underlag visas nedan.' : 'Prova Uppdatera igen om en stund.'}</p>}
         {ranking?.sourceUnavailable && <p className="daily-top-notice">Källan kunde inte nås. Senast sparade kurser visas; ingen ny dagsdata är bekräftad.</p>}
         {ranking?.stale && <p className="daily-top-notice">Äldre kursunderlag – datumen nedan gäller, inte dagens utveckling.</p>}

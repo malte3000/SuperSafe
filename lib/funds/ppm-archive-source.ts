@@ -2,7 +2,7 @@ import { PPM_ARCHIVE_URL, parsePpmArchive, type PpmArchive } from './ppm-ranking
 
 type CachedArchive = { checkedAt: string; unavailable: boolean; archive: PpmArchive | null };
 
-export async function loadPpmArchive(bucket: R2Bucket, now: Date) {
+export async function loadPpmArchive(bucket: R2Bucket, now: Date, readOnly = false) {
   let state: CachedArchive = { checkedAt: '', unavailable: true, archive: null };
   try {
     const cached = await bucket.get('ppm/collector.json');
@@ -11,7 +11,7 @@ export async function loadPpmArchive(bucket: R2Bucket, now: Date) {
       state = { ...saved, archive: saved.archive ? parsePpmArchive(saved.archive, now) : null };
     }
     const age = now.getTime() - Date.parse(state.checkedAt);
-    if (!Number.isFinite(age) || age < 0 || age >= 3600000) {
+    if (!readOnly && (!Number.isFinite(age) || age < 0 || age >= 3600000)) {
       try {
         const response = await fetch(PPM_ARCHIVE_URL, { signal: AbortSignal.timeout(12000) });
         if (!response.ok) throw new Error('Collector archive unavailable');

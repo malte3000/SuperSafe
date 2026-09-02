@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useFundData } from '@/components/use-fund-data';
 import { Binoculars, SearchCheck, RefreshCw, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,27 +39,11 @@ function WatchColumn({ kind, funds, fetchedAt, onCompare }: { kind: 'watch' | 'r
 }
 
 export function FundWatchlists() {
-  const [data, setData] = useState<WatchlistData | null>(null);
-  const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { data, error, loading, refreshing, refresh } = useFundData<WatchlistData>('/api/funds/watchlists', 6 * 3600000);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const comparisonHeading = useRef<HTMLHeadingElement>(null);
   const selected = data?.peers.find(fund => fund.id === selectedId);
   const peers = selected ? data!.peers.filter(fund => watchCategoryKey(fund) === watchCategoryKey(selected)).sort((a, b) => a.fee - b.fee || a.name.localeCompare(b.name, 'sv-SE')) : [];
-  const refresh = useCallback((signal?: AbortSignal) => fetch('/api/funds/watchlists', { signal })
-    .then(async response => {
-      if (!response.ok) throw new Error('Watchlists unavailable');
-      const next = await response.json() as WatchlistData;
-      if (!signal?.aborted) { setData(next); setError(false); }
-    }).catch(() => { if (!signal?.aborted) setError(true); })
-    .finally(() => { if (!signal?.aborted) setLoading(false); }), []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void refresh(controller.signal);
-    const timer = window.setInterval(() => { setLoading(true); void refresh(controller.signal); }, 6 * 3600000);
-    return () => { controller.abort(); window.clearInterval(timer); };
-  }, [refresh]);
   useEffect(() => { if (selectedId) comparisonHeading.current?.focus(); }, [selectedId]);
 
   return <section className="watch-section" aria-labelledby="watch-title" aria-busy={loading}>
@@ -66,11 +51,12 @@ export function FundWatchlists() {
       <Badge variant="secondary">Premiepension · Avgiftsbaserat urval</Badge>
       <h2 id="watch-title">Fonder att undersöka närmare</h2>
       <p>Två bevakningslistor med högst tio fonder vardera. Vi jämför avgifter inom samma kategori — inte framtida vinnare och förlorare.</p>
-    </div><Button variant="outline" disabled={loading} onClick={() => { setLoading(true); void refresh(); }}><RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden="true" /> Uppdatera</Button></div>
+    </div><Button variant="outline" disabled={refreshing} onClick={refresh}><RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" /> Uppdatera</Button></div>
     <p className="watch-scope">Avgifterna gäller <strong>efter Pensionsmyndighetens rabatt</strong>, inte sparande på ISK eller vanligt fondkonto. Listorna är inte köp- eller säljrekommendationer och inte anpassade till din ekonomi.</p>
     <div aria-live="polite">
       {loading && !data && <output className="watch-notice block">Hämtar fondkategorier och avgifter…</output>}
-      {error && <p className="watch-notice" role="alert">Listorna kunde inte uppdateras. Försök igen med Uppdatera.</p>}
+      {refreshing && data && <output className="watch-notice block">Sparat underlag visas. Kontrollerar uppdateringar i bakgrunden…</output>}
+      {error && <p className="watch-notice" role="alert">Listorna kunde inte uppdateras. Senast hämtat underlag behålls när det finns. Försök igen med Uppdatera.</p>}
       {data?.sourceUnavailable && <p className="watch-notice">Källan kunde inte nås. Senaste sparade underlag används; kontrollera hämtningsdatumet.</p>}
       {data?.expired && <p className="watch-notice">Underlaget är för gammalt för ett aktuellt urval. Listorna visas igen när en ny hämtning lyckas.</p>}
     </div>

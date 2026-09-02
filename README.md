@@ -73,6 +73,26 @@ Vid källfel behålls senaste lyckade underlag och en varning visas.
 Beräkningstester (Node 24): `node --test tests/ppm-ranking.test.mjs`.
 `SITE_ORIGIN` kan sättas till den betrodda publicerade sidans origin för delningsmetadata.
 
+## Snabb visning och uppdatering
+
+Daglig topplista och avgiftslistor använder två steg vid öppning och uppdatering.
+Vanlig GET läser enbart redan sparade R2-underlag (eller verifierat startunderlag)
+och gör inga externa anrop eller skrivningar. Datumen, åldersgränserna och kända
+källfel beräknas/visas även i denna snabba väg. Den väntar inte på en pågående
+extern hämtning. Därefter gör klienten GET med `?refresh=1`, som behåller
+befintliga intervall för källhämtning. Sparat innehåll går att använda under
+kontrollen. Ett fel raderar inte redan visade uppgifter; en varning visas.
+
+Anropen är `no-store` på HTTP-nivå: vår serverlagring är cachen, så webbläsarens
+cache får inte dölja nya fel eller gammalt underlag. Hämtningstider ändras endast
+vid lyckad källhämtning. Snabbare visning innebär inte färskare marknadsdata.
+Återkomst till en tidigare öppen flik kontrollerar underlaget igen. Avbrutna
+eller ersatta anrop får inte skriva in sena resultat. Ingen fonddata sparas i
+localStorage. Bakgrundsuppdateringen i webbläsaren är separat från GitHub-jobbet,
+som fortsätter samla kursdata även utan sidbesök. FI-sökningen ändras inte.
+
+Tester: `node --test tests/fund-fast-read.test.mjs tests/progressive-fetch.test.mjs`.
+
 ## Fonder att undersöka närmare
 
 `/api/funds/watchlists` ger två avgiftsbaserade urval med högst tio fonder vardera:

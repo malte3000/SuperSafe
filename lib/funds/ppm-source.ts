@@ -13,15 +13,15 @@ function getStorage(): R2Bucket {
   return bucket;
 }
 
-async function loadRanking(): Promise<PpmRanking> {
+async function loadRanking(readOnly = false): Promise<PpmRanking> {
   const now = new Date();
   const bucket = getStorage();
-  const archiveRequest = loadPpmArchive(bucket, now);
+  const archiveRequest = loadPpmArchive(bucket, now, readOnly);
   const cached = await bucket.get('ppm/latest.json');
-  let latest = cached ? await cached.json<PpmSnapshot>() : seed;
-  let sourceUnavailable = false;
+  let latest = cached ? await cached.json<PpmSnapshot & { sourceUnavailable?: boolean }>() : seed;
+  let sourceUnavailable = 'sourceUnavailable' in latest && latest.sourceUnavailable === true;
 
-  if (!cached || now.getTime() - Date.parse(latest.fetchedAt) >= CACHE_MS) {
+  if (!readOnly && (!cached || now.getTime() - Date.parse(latest.fetchedAt) >= CACHE_MS)) {
     try {
       const response = await fetch(PPM_QUOTES_URL, { signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error(`PPM source returned ${response.status}`);
@@ -31,6 +31,7 @@ async function loadRanking(): Promise<PpmRanking> {
       // Fail closed for truncated feeds; the normal feed contains hundreds of funds.
       if (quotes.length < 100) throw new Error('PPM feed is incomplete');
       latest = { fetchedAt: now.toISOString(), quotes };
+      sourceUnavailable = false;
     } catch {
       sourceUnavailable = true;
     }
@@ -40,6 +41,9 @@ async function loadRanking(): Promise<PpmRanking> {
       // Only successful complete feeds replace the last known good snapshot.
       await bucket.put(`ppm/days/${date}.json`, body, { httpMetadata: { contentType: 'application/json' } });
       await bucket.put('ppm/latest.json', body, { httpMetadata: { contentType: 'application/json' } });
+    } else {
+      // Preserve both the last good prices and the failure warning for fast reads.
+      await bucket.put('ppm/latest.json', JSON.stringify({ ...latest, sourceUnavailable: true }), { httpMetadata: { contentType: 'application/json' } });
     }
   }
 
@@ -57,7 +61,9 @@ async function loadRanking(): Promise<PpmRanking> {
   return { ...rankPpmFunds(snapshots, now), sourceUnavailable, collection: archive.collection };
 }
 
-export async function getPpmRanking(): Promise<PpmRanking> {
+export async function getPpmRanking(readOnly = false): Promise<PpmRanking> {
+  // A fast read must never join an in-flight external refresh.
+  if (readOnly) return loadRanking(true);
   if (!inFlight) inFlight = loadRanking().finally(() => { inFlight = undefined; });
   return inFlight;
 }
