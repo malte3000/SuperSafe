@@ -10,6 +10,16 @@ export function decodePpmCsv(buffer: ArrayBuffer): string {
 }
 export type PpmSnapshot = { fetchedAt: string; quotes: PpmQuote[] };
 export type PpmWinner = PpmQuote & { previousNav: number; changePercent: number };
+export const MAX_DAILY_CHANGE_PERCENT = 25;
+export type PpmSourceIssue = 'coverage_drop' | 'date_regression' | 'invalid_data' | 'unavailable';
+export type PpmQuality = {
+  date: string | null; matchedFunds: number; missingPrevious: number;
+  excluded: { id: string; name: string; reason: 'large_change' | 'identity_change'; changePercent: number | null }[];
+};
+export class PpmDataError extends Error {
+  code: PpmSourceIssue;
+  constructor(code: PpmSourceIssue) { super(code); this.code = code; }
+}
 export type PpmRanking = {
   status: 'ready' | 'waiting';
   date: string | null;
@@ -22,6 +32,8 @@ export type PpmRanking = {
   sourceUnavailable: boolean;
   funds: PpmWinner[];
   collection?: { lastSuccessAt: string | null; stale: boolean; unavailable: boolean };
+  sourceIssue?: PpmSourceIssue;
+  quality?: PpmQuality;
 };
 
 export function isIsoDate(value: string): boolean {
@@ -44,7 +56,8 @@ export function previousWeekday(date: string): string {
 }
 
 function validQuote(quote: PpmQuote, today: string): boolean {
-  return /^\d{6}$/.test(quote.id) && typeof quote.name === 'string'
+  return !!quote && typeof quote.id === 'string' && typeof quote.date === 'string'
+    && /^\d{6}$/.test(quote.id) && typeof quote.name === 'string'
     && quote.name.trim().length > 0 && quote.name.length <= 300
     && isIsoDate(quote.date) && quote.date <= today
     && Number.isFinite(quote.nav) && quote.nav > 0;
@@ -85,7 +98,8 @@ export function parsePpmCsv(text: string, now = new Date()): PpmQuote[] {
   const seen = new Set<string>();
   const today = stockholmDate(now);
   for (const row of rows.slice(1)) {
-    const nav = Number((row[3] ?? '').replace(/\s/g, '').replace(',', '.'));
+    const navText = (row[3] ?? '').replace(/\s/g, '');
+    const nav = /^\d+(?:[.,]\d+)?$/.test(navText) ? Number(navText.replace(',', '.')) : NaN;
     const quote = { id: row[0] ?? '', name: row[1] ?? '', nav, date: row[4] ?? '' };
     if (row.length !== 5 || !validQuote(quote, today) || seen.has(quote.id)) {
       throw new Error('Invalid or duplicate PPM quote');
@@ -96,6 +110,25 @@ export function parsePpmCsv(text: string, now = new Date()): PpmQuote[] {
   if (quotes.length === 0) throw new Error('Empty PPM feed');
   return quotes;
 }
+
+export function assertPpmUpdate(previous: PpmSnapshot | null, next: PpmSnapshot, now = new Date()) {
+  const time = Date.parse(next.fetchedAt);
+  if (!Number.isFinite(time) || time > now.getTime() || (previous && time <= Date.parse(previous.fetchedAt))
+    || !Array.isArray(next.quotes) || next.quotes.length < 100 || next.quotes.length > 2000) throw new PpmDataError('invalid_data');
+  const ids = new Set<string>();
+  const today = stockholmDate(new Date(time));
+  for (const quote of next.quotes) {
+    if (!validQuote(quote, today) || ids.has(quote.id)) throw new PpmDataError('invalid_data');
+    ids.add(quote.id);
+  }
+  if (!previous) return;
+  const prior = new Map(previous.quotes.map(quote => [quote.id, quote]));
+  const retained = next.quotes.filter(quote => prior.has(quote.id)).length;
+  if (retained < prior.size * 0.8) throw new PpmDataError('coverage_drop');
+  if (next.quotes.some(quote => prior.has(quote.id) && quote.date < prior.get(quote.id)!.date)) throw new PpmDataError('date_regression');
+}
+
+const comparableName = (name: string) => name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('sv-SE');
 
 export function rankPpmFunds(snapshots: PpmSnapshot[], now = new Date()): PpmRanking {
   const today = stockholmDate(now);
@@ -120,6 +153,7 @@ export function rankPpmFunds(snapshots: PpmSnapshot[], now = new Date()): PpmRan
     comparedFunds: 0, totalFunds: allIds.size, fetchedAt,
     stale: latestQuoteDate ? Date.parse(`${today}T00:00:00Z`) - Date.parse(`${latestQuoteDate}T00:00:00Z`) > 4 * 86400000 : false,
     sourceUnavailable: false, funds: [],
+    quality: { date: latestQuoteDate, matchedFunds: 0, missingPrevious: latestQuoteDate ? days.get(latestQuoteDate)!.size : 0, excluded: [] },
   };
   for (const date of dates) {
     // Do not resurrect an old historical ranking as the latest daily result.
@@ -128,18 +162,28 @@ export function rankPpmFunds(snapshots: PpmSnapshot[], now = new Date()): PpmRan
     const previous = days.get(previousDate);
     if (!previous) continue;
     const candidates: PpmWinner[] = [];
+    const quality: PpmQuality = { date, matchedFunds: 0, missingPrevious: 0, excluded: [] };
     for (const quote of days.get(date)!.values()) {
       const prior = previous.get(quote.id);
-      if (!prior) continue;
+      if (!prior) { quality.missingPrevious++; continue; }
+      quality.matchedFunds++;
       const changePercent = (quote.nav / prior.nav - 1) * 100;
+      const reason = comparableName(quote.name) !== comparableName(prior.name) ? 'identity_change'
+        : !Number.isFinite(changePercent) || Math.abs(changePercent) > MAX_DAILY_CHANGE_PERCENT + 1e-9 ? 'large_change' : null;
+      if (reason) {
+        quality.excluded.push({ id: quote.id, name: quote.name, reason, changePercent: Number.isFinite(changePercent) ? changePercent : null });
+        continue;
+      }
       if (Number.isFinite(changePercent)) candidates.push({ ...quote, previousNav: prior.nav, changePercent });
     }
-    if (candidates.length < 5) continue;
+    // Never hide a blocked comparison by falling back to older winners.
+    if (candidates.length < 5 && quality.excluded.length) return { ...result, quality };
+    if (candidates.length < 5) { if (date === latestQuoteDate) result.quality = quality; continue; }
     candidates.sort((a, b) => b.changePercent - a.changePercent || a.id.localeCompare(b.id));
     return {
       ...result, status: 'ready', date, previousDate,
       comparedFunds: candidates.length, funds: candidates.slice(0, 5),
-      stale: result.stale || date !== latestQuoteDate,
+      stale: result.stale || date !== latestQuoteDate, quality,
     };
   }
   return result;
@@ -173,12 +217,14 @@ export function parsePpmArchive(value: unknown, now = new Date()): PpmArchive {
     return { fetchedAt: snapshot.fetchedAt, quotes };
   });
   if (archive.lastSuccessAt !== snapshots.at(-1)!.fetchedAt) throw new Error('Invalid collection timestamp');
+  for (let index = 1; index < snapshots.length; index++) assertPpmUpdate(snapshots[index - 1], snapshots[index], now);
   return { schemaVersion: 1, source: PPM_QUOTES_URL, currency: 'SEK', lastSuccessAt: archive.lastSuccessAt, snapshots };
 }
 
 export function appendPpmSnapshot(previous: PpmArchive | null, snapshot: PpmSnapshot, now = new Date()): PpmArchive {
   if (previous) parsePpmArchive(previous, now);
   if (previous && Date.parse(snapshot.fetchedAt) <= Date.parse(previous.lastSuccessAt)) throw new Error('Collection did not advance');
+  assertPpmUpdate(previous?.snapshots.at(-1) ?? null, snapshot, now);
   const snapshots = [...(previous?.snapshots ?? []), snapshot]
     .filter(item => Date.parse(item.fetchedAt) >= now.getTime() - 10 * 86400000).slice(-48);
   return parsePpmArchive({ schemaVersion: 1, source: PPM_QUOTES_URL, currency: 'SEK', lastSuccessAt: snapshot.fetchedAt, snapshots }, now);

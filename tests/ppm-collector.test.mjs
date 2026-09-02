@@ -65,9 +65,12 @@ test('failed or malformed sources never overwrite last good archive', async t =>
   await collectPpm({ directory, now: () => now, fetcher: async () => responseCsv(), attempts: 1 });
   const before = await readFile(join(directory, 'recent.json'), 'utf8');
   for (const fetcher of [async () => new Response('', { status: 503 }), async () => new Response('invalid'),
+    async () => responseCsv('2026-08-31'),
+    async () => new Response(csv().replaceAll(/100\d{3}/g, id => String(Number(id) + 1000))),
     async () => new Response(csv().split('\n').slice(0, 10).join('\n')), async () => { throw new Error('offline'); }]) {
     await assert.rejects(collectPpm({ directory, now: () => new Date('2026-09-03T12:00:00Z'), fetcher, attempts: 1 }));
     assert.equal(await readFile(join(directory, 'recent.json'), 'utf8'), before);
+    assert.deepEqual(await readdir(join(directory, 'snapshots')), ['2026-09-02']);
   }
   await writeFile(join(directory, 'recent.json'), 'broken');
   await assert.rejects(collectPpm({ directory, now: () => now, fetcher: async () => responseCsv(), attempts: 1 }));
