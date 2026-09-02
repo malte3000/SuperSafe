@@ -13,6 +13,21 @@ Källa: https://www.fi.se/sv/vara-register/fondinnehav/
 Marknadssignaler är ännu inte anslutna. Demofondernas sannolikheter är fortsatt
 tydligt märkta som demodata.
 
+## Jämför fondinnehav
+
+På startsidan väljs två FI-fonder i sökbara fält. Gemensam vikt är summan av
+`min(vikt i fond 1, vikt i fond 2)` för varje exakt matchande ISIN. Dubbletter
+summerar sina vikter innan matchning. Olika aktieslag slås inte ihop och
+underliggande fondinnehav eller derivat genomlyses inte.
+
+Jämförelsen omfattar bara tillgängliga positioner med giltigt ISIN och redovisar
+identifierad fondvikt för respektive fond. Den normaliserar aldrig upp till 100 %.
+Noll träffar betyder inte att hela fonderna är olika. Samma fond, olika rapportdatum,
+negativa eller icke-finita vikter och summerad innehavsvikt över 100,1 % blockeras.
+Gränsen tillåter liten avrundning i rapporterade vikter.
+
+Tester: `node --test tests/overlap.test.mjs tests/ppm-ranking.test.mjs` (Node 24).
+
 ## Daglig topplista för premiepension
 
 `/api/funds/top-daily` hämtar Pensionsmyndighetens offentliga kurslista:
