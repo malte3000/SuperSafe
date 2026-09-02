@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Combobox, ComboboxInput, ComboboxContent, ComboboxEmpty, ComboboxList, ComboboxItem } from '@/components/ui/combobox';
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell, TableCaption } from '@/components/ui/table';
-import type { FiFund, FiFundDataset } from '@/lib/funds/fi-funds';
+import { matchesFiFund, normalizeFundSearch, type FiFund, type FiFundDataset } from '@/lib/funds/fi-funds';
 import { compareFunds, indexHoldings } from '@/lib/funds/overlap';
 
 const percent = (value: number) => `${new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 }).format(value)} %`;
@@ -15,16 +15,17 @@ function FundPicker({ id, label, funds, value, onChange }: { id: string; label: 
   return <div className="compare-picker">
     <label htmlFor={id}>{label}</label>
     <Combobox items={funds} value={value} onValueChange={onChange} itemToStringLabel={(fund: FiFund) => fund.name}
-      isItemEqualToValue={(a: FiFund, b: FiFund) => a.id === b.id} limit={30}
-      filter={(fund: FiFund, query: string) => `${fund.name} ${fund.isin ?? ''}`.toLocaleLowerCase('sv-SE').includes(query.trim().toLocaleLowerCase('sv-SE'))}>
-      <ComboboxInput id={id} placeholder="Sök fondnamn eller ISIN…" showClear className="h-12 w-full bg-background" />
+      isItemEqualToValue={(a: FiFund, b: FiFund) => a.id === b.id}
+      filter={(fund: FiFund, query: string) => !normalizeFundSearch(query) || matchesFiFund(fund, query)}>
+      <ComboboxInput id={id} placeholder="Till exempel LF Global eller ISIN…" showClear className="h-12 w-full bg-background" aria-describedby={`${id}-help`} />
       <ComboboxContent>
-        <ComboboxEmpty>Ingen fond hittades. Prova ett annat namn eller ISIN.</ComboboxEmpty>
+        <ComboboxEmpty className="p-4 text-left leading-5">Ingen träff i vårt FI-underlag. Skriv minst två tecken eller prova ISIN. Fonden kan också saknas i datakällan — alla fonder ingår inte.</ComboboxEmpty>
         <ComboboxList>{(fund: FiFund) => <ComboboxItem key={fund.id} value={fund} className="py-3 data-highlighted:bg-secondary data-highlighted:text-foreground">
           <span className="min-w-0"><span className="block font-medium">{fund.name}</span><small className="block text-muted-foreground">{fund.company} · {fund.isin ?? 'ISIN saknas'}</small></span>
         </ComboboxItem>}</ComboboxList>
       </ComboboxContent>
     </Combobox>
+    <p id={`${id}-help`} className="mt-2 text-xs leading-5 text-muted-foreground">{funds.length} FI-fonder · LF = Länsförsäkringar · Alla träffar kan rullas fram.</p>
   </div>;
 }
 

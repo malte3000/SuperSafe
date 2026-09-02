@@ -36,23 +36,59 @@ export type FiFundDataset = {
   funds: FiFund[];
 };
 
-function normalize(value: string) {
-  return value.trim().toLocaleLowerCase('sv-SE');
+export function normalizeFundSearch(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/ø/g, 'o').replace(/æ/g, 'ae')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-export function searchFiFunds(funds: FiFund[], query: string, limit = 6) {
-  const term = normalize(query);
-  if (term.length < 2) return [];
+function searchTerm(query: string) {
+  // Expand only known, whole-word abbreviations, never fragments of fund names.
+  const aliases: Record<string, string> = { lf: 'lansforsakringar' };
+  return normalizeFundSearch(query).split(' ').map(word => aliases[word] ?? word).join(' ');
+}
 
-  return funds
-    .filter((fund) => normalize(fund.name).includes(term) || normalize(fund.isin ?? '') === term)
-    .sort((a, b) => {
-      const aExact = normalize(a.name) === term || normalize(a.isin ?? '') === term;
-      const bExact = normalize(b.name) === term || normalize(b.isin ?? '') === term;
-      if (aExact !== bExact) return aExact ? -1 : 1;
-      return a.name.localeCompare(b.name, 'sv-SE');
-    })
-    .slice(0, limit);
+export function isExactFiFundMatch(fund: FiFund, query: string) {
+  const term = searchTerm(query);
+  return term.length >= 2 && (normalizeFundSearch(fund.name) === term
+    || (!!fund.isin && normalizeFundSearch(fund.isin).replace(/ /g, '') === term.replace(/ /g, '')));
+}
+
+function matchScore(fund: FiFund, query: string) {
+  const term = searchTerm(query);
+  if (term.length < 2) return -1;
+  if (isExactFiFundMatch(fund, query)) return 100;
+  const compact = term.replace(/ /g, '');
+  // An ISIN-like query must match the identifier, not an unrelated fund name.
+  if (/^[a-z]{2}\d[a-z0-9]*$/.test(compact)) {
+    return compact.length >= 4 && normalizeFundSearch(fund.isin ?? '').startsWith(compact) ? 90 : -1;
+  }
+  const name = normalizeFundSearch(fund.name);
+  const tokens = term.split(' ');
+  if (name === term) return 100;
+  if (name.startsWith(term)) return 80;
+  if (name.includes(term)) return 70;
+  if (tokens.every(token => name.includes(token))) return 60;
+  const withCompany = `${name} ${normalizeFundSearch(fund.company)}`;
+  return tokens.every(token => withCompany.includes(token)) ? 40 : -1;
+}
+
+export function matchesFiFund(fund: FiFund, query: string) {
+  return matchScore(fund, query) >= 0;
+}
+
+export function searchFiFunds(funds: FiFund[], query: string, limit = Infinity) {
+  return funds.map(fund => ({ fund, score: matchScore(fund, query) }))
+    .filter(item => item.score >= 0)
+    .sort((a, b) => b.score - a.score || a.fund.name.localeCompare(b.fund.name, 'sv-SE') || a.fund.id.localeCompare(b.fund.id))
+    .slice(0, limit).map(item => item.fund);
+}
+
+export function resolveFiFund(funds: FiFund[], query: string): FiFund | undefined {
+  const matches = searchFiFunds(funds, query);
+  const exact = matches.filter(fund => isExactFiFundMatch(fund, query));
+  if (exact.length === 1) return exact[0];
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 export function fiFundToFund(fund: FiFund): Fund {

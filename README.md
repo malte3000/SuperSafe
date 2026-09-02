@@ -13,6 +13,22 @@ Källa: https://www.fi.se/sv/vara-register/fondinnehav/
 Marknadssignaler är ännu inte anslutna. Demofondernas sannolikheter är fortsatt
 tydligt märkta som demodata.
 
+## Sökning
+
+Huvudsökningen och fondjämförelsen använder samma matchningsregler i `lib/funds/fi-funds.ts`:
+diakritiska tecken, extra mellanslag och skiljetecken normaliseras; sökord kan
+stå i valfri ordning; hela ordet `LF` utökas till `Länsförsäkringar`.
+Sökningen matchar fondnamn, fondbolag och ISIN. Identifierare får formateras
+med mellanslag/bindestreck men stavfel i ISIN korrigeras inte automatiskt.
+
+Huvudfältet visar sex träffar först, sedan tolv till per klick på Visa fler.
+Fondjämförelsens rullbara lista har inte längre en gräns på 30 träffar.
+Exakt fondnamn/ISIN eller en ensam träff kan öppnas direkt; annars måste användaren
+välja rätt fond. Demo kräver uttryckligt val eller exakt demonamn.
+Inga nya fonder har lagts till i detta steg. Saknat underlag skiljs från laddningsfel.
+
+Söktester: `node --test tests/fund-search.test.mjs` (Node 24).
+
 ## Jämför fondinnehav
 
 På startsidan väljs två FI-fonder i sökbara fält. Gemensam vikt är summan av

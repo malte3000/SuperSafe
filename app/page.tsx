@@ -38,10 +38,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getFundAnalysis } from '@/lib/funds/analysis';
-import { defaultFund, demoFunds, findDemoFund } from '@/lib/funds/demo-funds';
+import { defaultFund, demoFunds } from '@/lib/funds/demo-funds';
 import {
   fiFundToFund,
   searchFiFunds,
+  normalizeFundSearch,
+  resolveFiFund,
   type FiFund,
   type FiFundDataset,
 } from '@/lib/funds/fi-funds';
@@ -56,7 +58,7 @@ const directionStyles = {
 export default function Home() {
   const [query, setQuery] = useState(defaultFund.name);
   const [selectedFund, setSelectedFund] = useState(defaultFund);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [visibleResults, setVisibleResults] = useState(6);
   const [fiDataset, setFiDataset] = useState<FiFundDataset | null>(null);
   const [dataState, setDataState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [searchMessage, setSearchMessage] = useState('');
@@ -70,6 +72,9 @@ export default function Home() {
     if (!fiDataset || query === selectedFund.name) return [];
     return searchFiFunds(fiDataset.funds, query);
   }, [fiDataset, query, selectedFund.name]);
+  const isDemoQuery = demoFunds.some(fund => normalizeFundSearch(fund.name) === normalizeFundSearch(query));
+  const showNoMatches = dataState === 'ready' && normalizeFundSearch(query).length >= 2
+    && query !== selectedFund.name && !isDemoQuery && searchResults.length === 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -95,26 +100,26 @@ export default function Home() {
 
   function runAnalysis(event?: SubmitEvent<HTMLFormElement>) {
     event?.preventDefault();
-    const demoMatch = findDemoFund(query);
-    const fiMatch = fiDataset ? searchFiFunds(fiDataset.funds, query, 1)[0] : undefined;
-    const match = demoMatch ?? (fiMatch ? fiFundToFund(fiMatch) : undefined);
-    setIsAnalyzing(true);
-    window.setTimeout(() => {
-      if (match) {
-        setSelectedFund(match);
-        setQuery(match.name);
-        setSearchMessage('');
-      } else {
-        setSearchMessage('Ingen svensk värdepappersfond hittades. Prova fondnamn eller ISIN.');
-      }
-      setIsAnalyzing(false);
-    }, 520);
+    const demoMatch = demoFunds.find(fund => normalizeFundSearch(fund.name) === normalizeFundSearch(query));
+    const fiMatch = fiDataset ? resolveFiFund(fiDataset.funds, query) : undefined;
+    const match = fiMatch ? fiFundToFund(fiMatch) : demoMatch;
+    if (match) { chooseFund(match); return; }
+    if (normalizeFundSearch(query).length < 2) {
+      setSearchMessage('Skriv minst två tecken, ett fondnamn eller ISIN.');
+    } else if (dataState !== 'ready') {
+      setSearchMessage(dataState === 'loading' ? 'Fondlistan laddas fortfarande. Försök igen om en stund.' : 'Fondlistan kunde inte hämtas. Ladda om sidan för att försöka igen.');
+    } else if (searchResults.length > 1) {
+      setSearchMessage(`${searchResults.length} fonder matchar. Välj rätt fond i listan nedan — ingen fond väljs automatiskt.`);
+    } else {
+      setSearchMessage('Ingen träff i vårt FI-underlag. Prova ett annat namn eller ISIN. Fonden kan saknas i datakällan.');
+    }
   }
 
   function chooseFund(fund: Fund) {
     setQuery(fund.name);
     setSelectedFund(fund);
     setSearchMessage('');
+    setVisibleResults(6);
   }
 
   function chooseFiFund(fund: FiFund) {
@@ -151,23 +156,28 @@ export default function Home() {
 
           <form onSubmit={runAnalysis} className="search-shell">
             <Search className="size-5 text-emerald-900/45" aria-hidden="true" />
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Sök efter fond eller ISIN" className="h-12 border-0 bg-transparent px-1 text-base shadow-none focus-visible:ring-0" placeholder="Skriv fondnamn eller ISIN..." />
-            <Button type="submit" size="lg" disabled={isAnalyzing} className="h-11 rounded-xl bg-[#0f6b4f] px-5 text-white hover:bg-[#0b5b43]">
-              {isAnalyzing ? 'Analyserar…' : 'Analysera fond'}
-              {!isAnalyzing && <ArrowRight aria-hidden="true" />}
+            <Input value={query} onChange={(event) => { setQuery(event.target.value); setVisibleResults(6); setSearchMessage(''); }} aria-label="Sök efter fond eller ISIN" aria-describedby="fund-search-help" className="h-12 border-0 bg-transparent px-1 text-base shadow-none focus-visible:ring-0" placeholder="Till exempel LF Global eller ISIN..." />
+            <Button type="submit" size="lg" className="h-11 rounded-xl bg-[#0f6b4f] px-5 text-white hover:bg-[#0b5b43]">
+              Analysera fond <ArrowRight aria-hidden="true" />
             </Button>
           </form>
+          <p id="fund-search-help" className="mt-3 text-xs leading-5 text-emerald-950/65">Sök med eller utan å, ä och ö, i valfri ordning. LF = Länsförsäkringar. {fiDataset ? `${fiDataset.funds.length} fonder i FI-underlaget; alla fonder på marknaden ingår inte.` : 'Sökningen omfattar vårt FI-underlag.'}</p>
           {searchResults.length > 0 && (
-            <div className="fund-results" aria-label="Sökresultat">
-              {searchResults.map((fund) => (
+            <>
+            <output className="mt-3 block text-xs text-emerald-950/70">Visar {Math.min(visibleResults, searchResults.length)} av {searchResults.length} träffar</output>
+            <div id="fund-search-results" className="fund-results" aria-label="Sökresultat">
+              {searchResults.slice(0, visibleResults).map((fund) => (
                 <button key={fund.id} type="button" onClick={() => chooseFiFund(fund)}>
                   <span><strong>{fund.name}</strong><small>{fund.company}</small></span>
                   <code>{fund.isin ?? `FI-${fund.instituteNumber}`}</code>
                 </button>
               ))}
             </div>
+            {visibleResults < searchResults.length && <Button type="button" variant="outline" className="mt-3" aria-controls="fund-search-results" onClick={() => setVisibleResults(count => count + 12)}>Visa fler träffar ({searchResults.length - visibleResults} kvar)</Button>}
+            </>
           )}
-          {searchMessage && <p className="mt-3 text-sm font-medium text-rose-700">{searchMessage}</p>}
+          {showNoMatches && !searchMessage && <output className="mt-3 block max-w-3xl text-sm leading-6 text-emerald-950/80">Ingen träff i vårt FI-underlag. Prova ISIN eller färre sökord. Specialfonder och utlandsregistrerade fonder kan saknas — det betyder inte att fonden inte finns.</output>}
+          {searchMessage && <output className="mt-3 block text-sm font-medium text-rose-700">{searchMessage}</output>}
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-emerald-950/60">
             <span>{dataState === 'loading' ? 'Läser in FI-data…' : dataState === 'error' ? 'FI-data kunde inte läsas in · Testa demo:' : 'Testa demo:'}</span>
             {demoFunds.map((fund) => (
