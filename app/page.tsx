@@ -19,6 +19,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { DailyTopFunds } from '@/components/daily-top-funds';
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Table,
   TableBody,
@@ -168,6 +177,7 @@ export default function Home() {
       </section>
 
       <div className="mx-auto max-w-[1440px] px-5 py-7 lg:px-8 lg:py-9">
+        <DailyTopFunds />
         <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -205,7 +215,29 @@ export default function Home() {
           <article className="panel-card">
             <div className="panel-heading">
               <div><span className="panel-icon risk"><AlertTriangle /></span><div><h3>{isFiFund ? 'Största positioner' : 'Största riskbidrag'}</h3><p>{isFiFund ? 'Andel av fondförmögenheten' : 'Vikt × aktierisk'}</p></div></div>
-              <Info className="size-4 text-muted-foreground" aria-hidden="true" />
+              <Popover>
+                <PopoverTrigger
+                  aria-label={`Information om ${isFiFund ? 'största positioner' : 'största riskbidrag'}`}
+                  className="info-button"
+                >
+                  <Info aria-hidden="true" />
+                </PopoverTrigger>
+                <PopoverContent align="end" side="bottom" className="w-80 p-4">
+                  <PopoverHeader>
+                    <PopoverTitle>{isFiFund ? 'Vad visar största positioner?' : 'Vad visar största riskbidrag?'}</PopoverTitle>
+                    <PopoverDescription className="leading-5">
+                      {isFiFund
+                        ? 'Siffran är innehavets fondvikt på rapportdagen. 9,23 % betyder alltså att innehavet utgör 9,23 % av fonden – inte att kursen har gått upp 9,23 %.'
+                        : 'Riskbidrag väger ihop hur stor positionen är med den uppskattade aktierisken i demonstrationsanalysen.'}
+                    </PopoverDescription>
+                  </PopoverHeader>
+                  {isFiFund && (
+                    <p className="border-t pt-3 text-xs leading-5 text-muted-foreground">
+                      Uppgång och nedgång kräver separat NAV- eller marknadsdata och visas när den datakällan har kopplats in.
+                    </p>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-4 pt-4">
               {riskDrivers.map((holding) => (
