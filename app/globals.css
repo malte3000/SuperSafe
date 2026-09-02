@@ -202,12 +202,53 @@
 .compare-method p { margin-top: 12px; max-width: 950px; }
 .compare-method a { display: inline-block; margin-top: 12px; text-decoration: underline; text-underline-offset: 3px; }
 
+.watch-section { margin-bottom: 32px; }
+.watch-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 18px; }
+.watch-heading h2 { margin-top: 10px; font-size: clamp(24px, 3vw, 32px); font-weight: 650; letter-spacing: -.04em; }
+.watch-heading p { max-width: 820px; margin-top: 8px; color: var(--muted-foreground); font-size: 14px; line-height: 1.7; }
+.watch-scope { margin: 18px 0; padding: 15px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); font-size: 13px; line-height: 1.7; }
+.watch-meta { margin: 16px 0; color: var(--muted-foreground); font-size: 11px; line-height: 1.6; }
+.watch-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.watch-column { min-width: 0; padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--secondary); }
+.watch-column.review { background: var(--muted); }
+.watch-column-heading { display: flex; align-items: flex-start; gap: 12px; padding: 3px 2px 18px; }
+.watch-column-heading > svg { width: 22px; flex: 0 0 22px; margin-top: 2px; }
+.watch-column-heading h3 { font-size: 18px; font-weight: 650; letter-spacing: -.02em; }
+.watch-column-heading p { font-size: 12px; color: var(--muted-foreground); margin-top: 4px; }
+.watch-cards { display: grid; gap: 12px; list-style: none; }
+.watch-fund { padding: 20px; border-radius: 13px; background: var(--card); border: 1px solid var(--border); }
+.watch-fund h4 { margin-top: 12px; font-size: 16px; line-height: 1.5; font-weight: 650; overflow-wrap: anywhere; }
+.watch-fee { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+.watch-fee strong { font-size: 30px; font-weight: 650; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.watch-fee span { color: var(--muted-foreground); font-size: 11px; }
+.watch-reason, .watch-caution { font-size: 12px; line-height: 1.7; margin-top: 12px; }
+.watch-caution { color: var(--muted-foreground); }
+.watch-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; }
+.watch-card-actions a { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.watch-card-actions svg { width: 13px; height: 13px; }
+.watch-date { display: block; margin-top: 14px; color: var(--muted-foreground); font-size: 10px; line-height: 1.6; }
+.watch-expand { width: 100%; margin-top: 12px; }
+.watch-notice { padding: 16px; margin: 14px 0; border-radius: 12px; background: var(--secondary); font-size: 13px; line-height: 1.7; }
+.watch-method { margin-top: 18px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; font-size: 12px; line-height: 1.7; color: var(--muted-foreground); }
+.watch-method summary { cursor: pointer; font-weight: 600; color: var(--foreground); }
+.watch-method p { margin-top: 12px; max-width: 1050px; }
+.watch-method a, .watch-peer-table a { text-decoration: underline; text-underline-offset: 3px; }
+.watch-comparison { margin-top: 22px; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
+.watch-comparison h3 { font-size: 20px; font-weight: 650; }
+.watch-comparison p { margin-top: 10px; max-width: 900px; font-size: 13px; line-height: 1.7; color: var(--muted-foreground); }
+.watch-peer-table { max-height: 420px; overflow: auto; margin-top: 16px; }
+.watch-peer-table table { min-width: 500px; }
+.watch-section a:focus-visible, .watch-method summary:focus-visible, .watch-comparison h3:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; border-radius: 3px; }
+
 @media (max-width: 1100px) {
   .overview-grid { grid-template-columns: 1fr 1fr; }
   .score-card { grid-column: 1 / -1; }
 }
 
 @media (max-width: 680px) {
+  .watch-grid { grid-template-columns: 1fr; }
+  .watch-column { padding: 12px; }
+  .watch-fund, .watch-comparison { padding: 16px; }
   .compare-card { padding: 18px; }
   .compare-selectors { grid-template-columns: 1fr; gap: 10px; }
   .compare-swap { justify-self: center; margin: 0; }

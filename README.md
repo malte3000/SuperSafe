@@ -67,6 +67,38 @@ Vid källfel behålls senaste lyckade underlag och en varning visas.
 Beräkningstester (Node 24): `node --test tests/ppm-ranking.test.mjs`.
 `SITE_ORIGIN` kan sättas till den betrodda publicerade sidans origin för delningsmetadata.
 
+## Fonder att undersöka närmare
+
+`/api/funds/watchlists` ger två avgiftsbaserade urval med högst tio fonder vardera:
+”Fonder att hålla koll på” och ”Fonder att granska extra”. Första versionen omfattar
+bara Pensionsmyndighetens fondtorg och årliga avgifter **efter premiepensionsrabatt**.
+Avgifterna gäller inte ett vanligt fondkonto/ISK. Urvalet är inte köp-/säljråd,
+en prognos för månaden eller en sammanvägd kvalitetsbedömning.
+
+Källa: https://www.pensionsmyndigheten.se/service/fondtorg/
+Offentlig datakälla: https://www.pensionsmyndigheten.se/service/fondtorg/api/searchFunds?resultSize=1000
+
+Reglerna finns i `lib/funds/watchlists.ts`. Minst fem fonder med känd avgift och
+utan statusmeddelande krävs inom samma officiella fondtyp och kategori.
+Medianen beräknas av SuperSafe, inklusive den bedömda fonden. För bevakningslistan
+krävs minst 25 % och 0,05 procentenheter lägre avgift än medianen; granskningslistan
+kräver motsvarande högre avgift. Median noll ger inget urval. Rangordning görs på
+relativ avgiftsavvikelse, fondnummer avgör lika värden. Högst två per kategori
+och tio per lista visas. Saknade platser fylls aldrig med påhittade fonder.
+Kategorier kan innehålla olika strategier/risker. Avkastning och innehav ingår inte.
+
+”Jämför fonden” visar avgifterna för urvalets jämförbara PPM-fonder i kategorin,
+separat från FI-jämförelsen av innehav. Källänkar och hämtningstid visas.
+Verifierat startunderlag finns i `lib/funds/watchlist-baseline.json`.
+Nytt underlag hämtas vid användning när senaste lyckade hämtning är äldre än sex
+timmar och sparas i R2 `PPM_DATA`, nyckel `watchlist/latest.json`.
+Sidan läser vid öppning, manuell uppdatering och var sjätte timme medan den är öppen.
+Det är inget fristående bakgrundsjobb. Källfel behåller senaste lyckade underlag
+med en varning; underlag äldre än sju dagar döljs. Hämtningstid är inte ett
+löfte om avgiftens giltighetsdatum. Ofullständiga källsvar avvisas.
+
+Tester: `node --test tests/watchlists.test.mjs` (Node 24).
+
 ## Uppdatera FI-data
 
 Ladda ned och packa upp FI:s senaste kvartalsfil och kör sedan:

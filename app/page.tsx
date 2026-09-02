@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { DailyTopFunds } from '@/components/daily-top-funds';
 import { FundComparison } from '@/components/fund-comparison';
+import { FundWatchlists } from '@/components/fund-watchlists';
 import {
   Popover,
   PopoverContent,
@@ -141,7 +142,7 @@ export default function Home() {
             <Badge className="border-emerald-300/20 bg-emerald-200/10 text-emerald-100">
               {isFiFund ? 'MVP · FI-data' : 'MVP · Demoläge'}
             </Badge>
-            <Button variant="ghost" render={<a href="#jamfor-fonder" aria-label="Jämför fonder" />} className="hidden text-emerald-50 hover:bg-white/10 hover:text-white sm:inline-flex">Jämför fonder</Button>
+            <Button variant="ghost" nativeButton={false} render={<a href="#jamfor-fonder" aria-label="Jämför fonder" />} className="hidden text-emerald-50 hover:bg-white/10 hover:text-white sm:inline-flex">Jämför fonder</Button>
           </div>
         </div>
       </header>
@@ -188,6 +189,7 @@ export default function Home() {
       </section>
 
       <div className="mx-auto max-w-[1440px] px-5 py-7 lg:px-8 lg:py-9">
+        <FundWatchlists />
         <FundComparison dataset={fiDataset} dataState={dataState} />
         <DailyTopFunds />
         <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
