@@ -94,6 +94,7 @@ export function resolveFiFund(funds: FiFund[], query: string): FiFund | undefine
 export function fiFundToFund(fund: FiFund): Fund {
   return {
     source: 'fi',
+    sourceId: fund.id,
     name: fund.name,
     category: `${fund.company} · Svensk värdepappersfond`,
     riskClass: 0,

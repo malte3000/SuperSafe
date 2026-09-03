@@ -23,6 +23,7 @@ import { DailyTopFunds } from '@/components/daily-top-funds';
 import { FundComparison } from '@/components/fund-comparison';
 import { FundWatchlists } from '@/components/fund-watchlists';
 import { DataFreshness } from '@/components/data-freshness';
+import { FavoriteButton, FundFavoritesProvider, MyFunds } from '@/components/fund-favorites';
 import {
   Popover,
   PopoverContent,
@@ -58,6 +59,10 @@ const directionStyles = {
 };
 
 export default function Home() {
+  return <FundFavoritesProvider><FundHome /></FundFavoritesProvider>;
+}
+
+function FundHome() {
   const [query, setQuery] = useState(defaultFund.name);
   const [selectedFund, setSelectedFund] = useState(defaultFund);
   const [visibleResults, setVisibleResults] = useState(6);
@@ -140,10 +145,11 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Badge className="border-emerald-300/20 bg-emerald-200/10 text-emerald-100">
+            <Badge className="hidden border-emerald-300/20 bg-emerald-200/10 text-emerald-100 sm:inline-flex">
               {isFiFund ? 'MVP · FI-data' : 'MVP · Demoläge'}
             </Badge>
             <Button variant="ghost" nativeButton={false} render={<a href="#jamfor-fonder" aria-label="Jämför fonder" />} className="hidden text-emerald-50 hover:bg-white/10 hover:text-white sm:inline-flex">Jämför fonder</Button>
+            <Button variant="ghost" nativeButton={false} render={<a href="#mina-fonder" aria-label="Mina fonder" />} className="text-emerald-50 hover:bg-white/10 hover:text-white">Mina fonder</Button>
           </div>
         </div>
       </header>
@@ -169,10 +175,10 @@ export default function Home() {
             <output className="mt-3 block text-xs text-emerald-950/70">Visar {Math.min(visibleResults, searchResults.length)} av {searchResults.length} träffar</output>
             <div id="fund-search-results" className="fund-results" aria-label="Sökresultat">
               {searchResults.slice(0, visibleResults).map((fund) => (
-                <button key={fund.id} type="button" onClick={() => chooseFiFund(fund)}>
+                <div key={fund.id} className="fund-result-row"><button type="button" className="fund-result-open" onClick={() => chooseFiFund(fund)}>
                   <span><strong>{fund.name}</strong><small>{fund.company}</small></span>
                   <code>{fund.isin ?? `FI-${fund.instituteNumber}`}</code>
-                </button>
+                </button><FavoriteButton fund={{ source: 'fi', id: fund.id, name: fund.name }} compact /></div>
               ))}
             </div>
             {visibleResults < searchResults.length && <Button type="button" variant="outline" className="mt-3" aria-controls="fund-search-results" onClick={() => setVisibleResults(count => count + 12)}>Visa fler träffar ({searchResults.length - visibleResults} kvar)</Button>}
@@ -190,16 +196,21 @@ export default function Home() {
       </section>
 
       <div className="mx-auto max-w-[1440px] px-5 py-7 lg:px-8 lg:py-9">
+        <MyFunds dataset={fiDataset} dataState={dataState} onOpen={fund => {
+          chooseFiFund(fund);
+          requestAnimationFrame(() => { const heading = document.getElementById('fund-analysis-title'); heading?.focus({ preventScroll: true }); heading?.scrollIntoView({ block: 'start' }); });
+        }} />
         <FundWatchlists />
         <FundComparison dataset={fiDataset} dataState={dataState} />
         <DailyTopFunds />
         <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-semibold tracking-[-0.03em]">{selectedFund.name}</h2>
+              <h2 id="fund-analysis-title" tabIndex={-1} className="text-xl font-semibold tracking-[-0.03em]">{selectedFund.name}</h2>
               <Badge variant="outline" className={isFiFund ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-amber-300 bg-amber-50 text-amber-800'}>
                 {isFiFund ? 'Verifierad FI-data' : 'Demodata'}
               </Badge>
+              {isFiFund && selectedFund.sourceId && <FavoriteButton fund={{ source: 'fi', id: selectedFund.sourceId, name: selectedFund.name }} />}
             </div>
             <p className="text-sm text-muted-foreground">{selectedFund.category}</p>
           </div>

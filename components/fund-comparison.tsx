@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { DataFreshness } from '@/components/data-freshness';
+import { FavoriteButton } from '@/components/fund-favorites';
 import { ArrowLeftRight, Info, Layers3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ function Coverage({ fund }: { fund: FiFund }) {
   const identified = indexHoldings(fund);
   return <div className="compare-coverage">
     <h3>{fund.name}</h3>
+    <FavoriteButton fund={{ source: 'fi', id: fund.id, name: fund.name }} />
     <p><strong>{percent(identified.identifiedWeight)}</strong> av fondens värde har identifierbart ISIN i underlaget.</p>
     <small>{fund.holdings.length} av {fund.holdingsCount} rapporterade positioner visas · {fund.reportDate}</small>
     {identified.excluded > 0 && <small>{identified.excluded} positioner saknar användbart ISIN och matchas inte.</small>}

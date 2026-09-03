@@ -16,6 +16,7 @@ export type Holding = {
 
 export type Fund = {
   source: 'demo' | 'fi';
+  sourceId?: string;
   name: string;
   category: string;
   riskClass: number;

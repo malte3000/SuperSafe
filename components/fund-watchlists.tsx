@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFundData } from '@/components/use-fund-data';
 import { DataFreshness } from '@/components/data-freshness';
+import { FavoriteButton } from '@/components/fund-favorites';
 import { formatFetchTime } from '@/lib/funds/freshness';
 import { Binoculars, SearchCheck, RefreshCw, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ function WatchColumn({ kind, funds, fetchedAt, onCompare }: { kind: 'watch' | 'r
       {(expanded ? funds : funds.slice(0, 3)).map(fund => <li key={fund.id} className="watch-fund">
         <Badge variant="outline">{fund.category}</Badge>
         <h4>{fund.name}</h4>
+        <FavoriteButton fund={{ source: 'ppm', id: fund.id, name: fund.name }} />
         <div className="watch-fee"><strong>{percent(fund.fee)}</strong><span>per år efter PPM-rabatt</span></div>
         <p className="watch-reason"><strong>Varför med?</strong> Avgiften är {number(Math.abs(fund.difference))} procentenheter {watching ? 'lägre' : 'högre'} än medianen {percent(fund.median)} bland {fund.peerCount} fonder i samma kategori och fondtyp i underlaget.</p>
         <p className="watch-caution">{watching ? 'Låg avgift säger inget säkert om framtida avkastning. Kontrollera risk, placeringsinriktning och spartid.' : 'Högre avgift är inte i sig ett skäl att sälja. Förvaltningssätt och strategi kan skilja sig mellan fonderna.'}</p>

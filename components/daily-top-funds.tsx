@@ -2,6 +2,7 @@
 
 import { useFundData } from '@/components/use-fund-data';
 import { DataFreshness } from '@/components/data-freshness';
+import { FavoriteButton } from '@/components/fund-favorites';
 import { formatDataDate, formatFetchTime, rankingDate } from '@/lib/funds/freshness';
 import { ArrowUpRight, Clock3, ExternalLink, Info, RefreshCw, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +91,7 @@ export function DailyTopFunds() {
                     {fund.changePercent > 0 && <ArrowUpRight aria-hidden="true" />}
                     {percent.format(fund.changePercent / 100)}
                   </strong>
+                  <FavoriteButton fund={{ source: 'ppm', id: fund.id, name: fund.name }} compact />
                 </li>
               ))}
             </ol>

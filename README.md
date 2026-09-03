@@ -4,6 +4,27 @@ En svensk fondanalys-pilot som visar rapporterade fondinnehav och innehavskoncen
 
 ## Fonddata
 
+### Mina fonder (webbläsarlokala favoriter)
+
+Stjärnor i FI-sökresultat, vald fond, innehavsjämförelse, PPM-topplista och
+avgiftslistor sparar genvägar i `supersafe:favorite-funds:v1` i localStorage.
+Användaren har valt denna enhetslokala första version: inget konto, ingen
+synkning mellan enheter och ingen serverlagring av favoriter. Endast källa,
+identifierare och visningsnamn sparas, inte kurser, innehav eller sparbelopp.
+Rensad webbplatsdata eller avslutat privat läge kan radera listan.
+
+FI identifieras med datasetets exakta fond-ID och PPM med sexsiffrigt fondnummer.
+Källorna hålls åtskilda; namn används aldrig för automatisk ihopslagning.
+Demoexempel kan inte sparas. Saknade FI-fonder behålls som markerade genvägar,
+inte som gamla innehavsdata. FI-favoriter öppnar aktuell tillgänglig analys;
+PPM-favoriter öppnar Pensionsmyndighetens fondfakta och utlovar inte FI-täckning.
+
+Listan valideras och begränsas till 100 poster. Lagringsfel annonseras utan
+falsk sparbekräftelse. Inläsning sker före skrivning, och ändringar i andra flikar
+läses via storage-händelser. Samtidiga skrivningar mellan flikar är inte
+transaktionella. Okänt/skadat lagringsformat skrivs inte automatiskt över.
+Tester: `node --test tests/favorites.test.mjs`.
+
 Pilotens riktiga fonddata kommer från Finansinspektionens öppna register över svenska
 värdepappersfonders innehav. Nuvarande data avser 2026 Q2, med rapportdatum
 2026-06-30 och publiceringsdatum 2026-08-20.
@@ -127,8 +148,8 @@ Anropen är `no-store` på HTTP-nivå: vår serverlagring är cachen, så webbl�
 cache får inte dölja nya fel eller gammalt underlag. Hämtningstider ändras endast
 vid lyckad källhämtning. Snabbare visning innebär inte färskare marknadsdata.
 Återkomst till en tidigare öppen flik kontrollerar underlaget igen. Avbrutna
-eller ersatta anrop får inte skriva in sena resultat. Ingen fonddata sparas i
-localStorage. Bakgrundsuppdateringen i webbläsaren är separat från GitHub-jobbet,
+eller ersatta anrop får inte skriva in sena resultat. Ingen kurs- eller avgiftshistorik
+sparas i localStorage; bara användarvalda favoritgenvägar. Bakgrundsuppdateringen i webbläsaren är separat från GitHub-jobbet,
 som fortsätter samla kursdata även utan sidbesök. FI-sökningen ändras inte.
 
 Tester: `node --test tests/fund-fast-read.test.mjs tests/progressive-fetch.test.mjs`.
