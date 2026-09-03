@@ -1,6 +1,8 @@
 'use client';
 
 import { useFundData } from '@/components/use-fund-data';
+import { DataFreshness } from '@/components/data-freshness';
+import { formatDataDate, formatFetchTime, rankingDate } from '@/lib/funds/freshness';
 import { ArrowUpRight, Clock3, ExternalLink, Info, RefreshCw, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,7 +12,7 @@ import { PPM_SOURCE_URL, PPM_COLLECTION_URL, MAX_DAILY_CHANGE_PERCENT, type PpmR
 const percent = new Intl.NumberFormat('sv-SE', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero' });
 
 function displayDate(value: string) {
-  return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Stockholm' }).format(new Date(value));
+  return formatDataDate(value);
 }
 
 export function DailyTopFunds() {
@@ -46,6 +48,13 @@ export function DailyTopFunds() {
         </div>
       </div>
 
+      {ranking && <DataFreshness
+        observationLabel={ranking.status === 'ready' ? 'Topplistans kurser avser' : 'Senaste kursdatum i underlaget'}
+        observationDate={rankingDate(ranking)} fetchedAt={ranking.fetchedAt} fetchLabel="Senaste lyckade kurshämtning"
+        note={ranking.status === 'ready'
+          ? `Jämförs med ${formatDataDate(ranking.previousDate)}. Hämtningstiden gäller senaste kursfilen, inte när fondkurserna ändrades. En ny hämtning gör inte äldre kurser aktuella. Inte realtidsdata.`
+          : 'Fonder kan ha olika kursdatum. En ny hämtning innebär inte en ny kursdag. Ingen dagsrankning visas förrän tillräckligt med jämförbar data finns.'}
+      />}
       <div aria-live="polite">
         {loading && !ranking && <p className="daily-top-notice">Hämtar officiella fondkurser…</p>}
         {refreshing && ranking && <output className="daily-top-notice block">Sparat underlag visas. Kontrollerar uppdateringar i bakgrunden…</output>}
@@ -100,7 +109,7 @@ export function DailyTopFunds() {
       {ranking?.collection && <div className="daily-top-notice">
         <p><strong>Automatisk kursinsamling</strong> · Fyra schemalagda körningar per dygn, oberoende av sidbesök.</p>
         <p>{ranking.collection.lastSuccessAt
-          ? `Senast sparad insamling: ${new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Stockholm' }).format(new Date(ranking.collection.lastSuccessAt))} (svensk tid).`
+          ? `Senast sparad insamling: ${formatFetchTime(ranking.collection.lastSuccessAt)}.`
           : 'Ingen lyckad bakgrundsinsamling har kunnat bekräftas ännu.'}</p>
         {ranking.collection.unavailable && <p>Insamlingsarkivet kunde inte uppdateras. Tidigare underlag och direkt hämtade kurser används när de finns.</p>}
         {ranking.collection.stale && ranking.collection.lastSuccessAt && <p>Ingen ny bakgrundsinsamling har bekräftats på över 18 timmar. Kontrollera körningarna.</p>}
@@ -108,7 +117,7 @@ export function DailyTopFunds() {
       </div>}
       <div className="daily-top-footer">
         <a href={PPM_SOURCE_URL} target="_blank" rel="noopener noreferrer">Källa: Pensionsmyndigheten <ExternalLink aria-hidden="true" /></a>
-        <span>{ranking?.fetchedAt ? `Underlag hämtat ${displayDate(ranking.fetchedAt)}` : 'Dagliga kurser, inte realtid'} · Inte investeringsrådgivning</span>
+        <span>Dagliga kurser, inte realtid · Inte investeringsrådgivning</span>
       </div>
     </section>
   );

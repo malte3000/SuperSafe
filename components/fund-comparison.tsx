@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { DataFreshness } from '@/components/data-freshness';
 import { ArrowLeftRight, Info, Layers3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ export function FundComparison({ dataset, dataState }: { dataset: FiFundDataset 
     {dataState === 'loading' && <output className="compare-message block">Hämtar fonder från Finansinspektionen…</output>}
     {dataState === 'error' && <p className="compare-message" role="alert">Fondlistan kunde inte hämtas. Ladda om sidan för att försöka igen.</p>}
     {dataState === 'ready' && <>
+      <DataFreshness observationLabel="FI-underlagets innehav avser" observationDate={dataset?.source.reportDate} publishedAt={dataset?.source.publishedAt} note="Kvartalsrapporterade innehav, inte dagens portföljer. Hämtningsdatum från FI är inte sparat i detta underlag. Att öppna sidan på nytt ändrar inte rapportdatumet. Varje vald fonds rapportdatum visas i resultatet." />
       <div className="compare-selectors">
         <FundPicker id="compare-left" label="Fond 1" funds={funds} value={left} onChange={setLeft} />
         <Button variant="outline" size="icon" aria-label="Byt plats på fonderna" onClick={() => { setLeft(right); setRight(left); }} disabled={!left && !right} className="compare-swap"><ArrowLeftRight aria-hidden="true" /></Button>

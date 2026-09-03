@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useFundData } from '@/components/use-fund-data';
+import { DataFreshness } from '@/components/data-freshness';
+import { formatFetchTime } from '@/lib/funds/freshness';
 import { Binoculars, SearchCheck, RefreshCw, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +12,6 @@ import { WATCHLIST_SOURCE, WATCHLIST_FEES_SOURCE, watchCategoryKey, type WatchCa
 
 const number = (value: number) => new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 3 }).format(value);
 const percent = (value: number) => `${number(value)} %`;
-const dateLabel = (value: string) => new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeZone: 'Europe/Stockholm' }).format(new Date(value));
 const factUrl = (id: string) => `https://www.pensionsmyndigheten.se/service/fondtorg/fond/${id}`;
 
 function WatchColumn({ kind, funds, fetchedAt, onCompare }: { kind: 'watch' | 'review'; funds: WatchCandidate[]; fetchedAt: string; onCompare: (id: string) => void }) {
@@ -31,7 +32,7 @@ function WatchColumn({ kind, funds, fetchedAt, onCompare }: { kind: 'watch' | 'r
         <p className="watch-reason"><strong>Varför med?</strong> Avgiften är {number(Math.abs(fund.difference))} procentenheter {watching ? 'lägre' : 'högre'} än medianen {percent(fund.median)} bland {fund.peerCount} fonder i samma kategori och fondtyp i underlaget.</p>
         <p className="watch-caution">{watching ? 'Låg avgift säger inget säkert om framtida avkastning. Kontrollera risk, placeringsinriktning och spartid.' : 'Högre avgift är inte i sig ett skäl att sälja. Förvaltningssätt och strategi kan skilja sig mellan fonderna.'}</p>
         <div className="watch-card-actions"><Button variant="outline" onClick={() => onCompare(fund.id)} aria-label={`Jämför ${fund.name} med kategorin`}>Jämför fonden <ArrowRight aria-hidden="true" /></Button><a href={factUrl(fund.id)} target="_blank" rel="noopener noreferrer">Fondfakta <ExternalLink aria-hidden="true" /></a></div>
-        <small className="watch-date">Källa: Pensionsmyndigheten · Hämtat <time dateTime={fetchedAt}>{dateLabel(fetchedAt)}</time></small>
+        <small className="watch-date">Källa: Pensionsmyndigheten · Hämtat <time dateTime={fetchedAt}>{formatFetchTime(fetchedAt)}</time> · Avgiftens giltighetsdatum saknas i underlaget.</small>
       </li>)}
     </ul>
     {funds.length > 3 && <Button variant="ghost" className="watch-expand" aria-expanded={expanded} aria-controls={`watch-${kind}-list`} onClick={() => setExpanded(!expanded)}>{expanded ? 'Visa färre' : `Visa alla ${funds.length} fonder`}</Button>}
@@ -53,6 +54,7 @@ export function FundWatchlists() {
       <p>Två bevakningslistor med högst tio fonder vardera. Vi jämför avgifter inom samma kategori — inte framtida vinnare och förlorare.</p>
     </div><Button variant="outline" disabled={refreshing} onClick={refresh}><RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" /> Uppdatera</Button></div>
     <p className="watch-scope">Avgifterna gäller <strong>efter Pensionsmyndighetens rabatt</strong>, inte sparande på ISK eller vanligt fondkonto. Listorna är inte köp- eller säljrekommendationer och inte anpassade till din ekonomi.</p>
+    {data && <DataFreshness observationLabel="Avgifternas giltighetsdatum" unknownObservation="Anges inte i vårt källunderlag" fetchedAt={data.fetchedAt} note="Vi vet när uppgifterna hämtades, men inte när varje avgift senast ändrades eller började gälla. Nyligen hämtat är därför inte samma sak som nyligen ändrat." />}
     <div aria-live="polite">
       {loading && !data && <output className="watch-notice block">Hämtar fondkategorier och avgifter…</output>}
       {refreshing && data && <output className="watch-notice block">Sparat underlag visas. Kontrollerar uppdateringar i bakgrunden…</output>}
@@ -61,7 +63,7 @@ export function FundWatchlists() {
       {data?.expired && <p className="watch-notice">Underlaget är för gammalt för ett aktuellt urval. Listorna visas igen när en ny hämtning lyckas.</p>}
     </div>
     {data && !data.expired && <>
-      <p className="watch-meta">Hämtat {dateLabel(data.fetchedAt)} · {data.eligibleFunds} jämförbara av {data.totalFunds} rapporterade fonder · Hämtningstid är inte ett giltighetsdatum för varje avgift.</p>
+      <p className="watch-meta">{data.eligibleFunds} jämförbara av {data.totalFunds} rapporterade fonder.</p>
       <div className="watch-grid"><WatchColumn kind="watch" funds={data.watch} fetchedAt={data.fetchedAt} onCompare={setSelectedId} /><WatchColumn kind="review" funds={data.review} fetchedAt={data.fetchedAt} onCompare={setSelectedId} /></div>
     </>}
     {selected && <section className="watch-comparison" aria-labelledby="watch-comparison-title">

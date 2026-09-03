@@ -22,6 +22,7 @@ import { Progress } from '@/components/ui/progress';
 import { DailyTopFunds } from '@/components/daily-top-funds';
 import { FundComparison } from '@/components/fund-comparison';
 import { FundWatchlists } from '@/components/fund-watchlists';
+import { DataFreshness } from '@/components/data-freshness';
 import {
   Popover,
   PopoverContent,
@@ -205,6 +206,7 @@ export default function Home() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock3 className="size-3.5" aria-hidden="true" /> {selectedFund.updated}</div>
         </div>
 
+        {isFiFund && <DataFreshness observationLabel="Fondens innehav avser" observationDate={selectedFund.reportDate} publishedAt={fiDataset?.source.publishedAt} note="Innehaven är en historisk ögonblicksbild, inte fondens portfölj i dag. Hämtningsdatum från FI är inte sparat i detta underlag. Publiceringsdatumet är inte innehavens datum." />}
         <section className="overview-grid" aria-label="Samlad fondbedömning">
           <article className="score-card">
             <div className="score-dial" style={{ '--score': `${Math.min(score, 100) * 3.6}deg` } as CSSProperties}>

@@ -99,6 +99,22 @@ eller framtida fondavkastning. FI-import och prognosmodeller ändras inte i dett
 
 ## Snabb visning och uppdatering
 
+### Tydliga datum (steg 4)
+
+Topplistan visar kursdatumet för den faktiskt visade jämförelsen separat från
+senaste lyckade kurshämtningen. I vänteläget visas i stället senaste kursdatum
+i underlaget; det innebär inte att alla fonder har detta datum. Hämtningstider
+visas med klockslag i Europe/Stockholm, även om besökaren är i en annan tidszon.
+En ny hämtning flyttar inte fram kursdagen och ändrar inte befintliga åldersgränser.
+
+Avgiftslistorna visar uttryckligen att giltighetsdatum saknas i vårt källunderlag.
+FI-innehav och innehavsjämförelsen skiljer på rapportdatum och källans
+publiceringsdatum. FI-hämtningstid saknas i befintligt underlag och visas som
+okänd; sidans laddningstid eller filens ändringstid används inte som ersättning.
+Ingen ny dataleverantör eller prenumeration införs i detta steg.
+
+### Sparat underlag först
+
 Daglig topplista och avgiftslistor använder två steg vid öppning och uppdatering.
 Vanlig GET läser enbart redan sparade R2-underlag (eller verifierat startunderlag)
 och gör inga externa anrop eller skrivningar. Datumen, åldersgränserna och kända
