@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { DailyTopFunds } from '@/components/daily-top-funds';
 import { FundComparison } from '@/components/fund-comparison';
+import { FundPortfolio } from '@/components/fund-portfolio';
 import { FundWatchlists } from '@/components/fund-watchlists';
 import { DataFreshness } from '@/components/data-freshness';
 import { FavoriteButton, FundFavoritesProvider, MyFunds } from '@/components/fund-favorites';
@@ -136,7 +137,7 @@ function FundHome() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-white/8 bg-[#071410]/95 text-white">
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-5 lg:px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1440px] flex-wrap items-center justify-between gap-3 px-5 py-3 lg:px-8">
           <div className="flex items-center gap-3">
             <span className="brand-mark"><ShieldCheck aria-hidden="true" /></span>
             <div>
@@ -150,6 +151,7 @@ function FundHome() {
             </Badge>
             <Button variant="ghost" nativeButton={false} render={<a href="#jamfor-fonder" aria-label="Jämför fonder" />} className="hidden text-emerald-50 hover:bg-white/10 hover:text-white sm:inline-flex">Jämför fonder</Button>
             <Button variant="ghost" nativeButton={false} render={<a href="#mina-fonder" aria-label="Mina fonder" />} className="text-emerald-50 hover:bg-white/10 hover:text-white">Mina fonder</Button>
+            <Button variant="ghost" nativeButton={false} render={<a href="#portfolj" aria-label="Portföljöversikt" />} className="text-emerald-50 hover:bg-white/10 hover:text-white">Portfölj</Button>
           </div>
         </div>
       </header>
@@ -200,6 +202,7 @@ function FundHome() {
           chooseFiFund(fund);
           requestAnimationFrame(() => { const heading = document.getElementById('fund-analysis-title'); heading?.focus({ preventScroll: true }); heading?.scrollIntoView({ block: 'start' }); });
         }} />
+        <FundPortfolio dataset={fiDataset} dataState={dataState} />
         <FundWatchlists />
         <FundComparison dataset={fiDataset} dataState={dataState} />
         <DailyTopFunds />

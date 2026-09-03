@@ -65,6 +65,32 @@ Gränsen tillåter liten avrundning i rapporterade vikter.
 
 Tester: `node --test tests/overlap.test.mjs tests/ppm-ranking.test.mjs` (Node 24).
 
+## Portföljöversikt
+
+Under Mina fonder kan användaren välja 2–10 unika FI-fonder och ange andelar
+som tillsammans är exakt 100 %. FI-favoriter kan läggas till som genvägar;
+PPM-favoriter matchas inte med namn. Valen är tillfälligt React-tillstånd:
+inga sparbelopp krävs, inget skickas till servern och inget sparas vid omladdning.
+
+`lib/funds/portfolio.ts` beräknar varje instruments portföljandel som summan av
+`angiven fondandel * rapporterad innehavsvikt / 100`. Exakt ISIN matchas med
+samma indexering som fondjämförelsen; upprepade positioner inom en fond summeras
+först. Andelar anges med högst två decimaler, komma eller punkt, och valideras
+som heltal i hundradelar av en procent. Fördela lika är en uttrycklig åtgärd;
+resterande hundradelar tilldelas fonderna i listordning, aldrig dolt i beräkningen.
+
+Resultatet visar identifierad täckning, okänd andel (inte kontanter), de tio
+största kända positionerna, alla återkommande ISIN och varje fonds bidrag.
+Ingen uppskalning av ofullständigt underlag, aktieslags-/bolagssammanslagning,
+genomlysning av fonder/derivat eller risk-/avkastningsprognos görs. Vikterna
+gäller hela den angivna portföljen och kombineras med historiska FI-innehav.
+
+Olika/ogiltiga rapportdatum, ogiltiga vikter, dubbla fonder och ofullständig
+fördelning döljer resultatet direkt. Summerade innehavsvikter över 100 %
+(bortsett från flyttalsbrus) blockeras striktare än i parjämförelsen för att
+undvika täckning över 100 %. Även avrundade källvärden kan utlösa spärren.
+Tester: `node --test tests/portfolio.test.mjs`.
+
 ## Daglig topplista för premiepension
 
 `/api/funds/top-daily` hämtar Pensionsmyndighetens offentliga kurslista:

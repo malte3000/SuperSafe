@@ -13,7 +13,7 @@ import { compareFunds, indexHoldings } from '@/lib/funds/overlap';
 
 const percent = (value: number) => `${new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 }).format(value)} %`;
 
-function FundPicker({ id, label, funds, value, onChange }: { id: string; label: string; funds: FiFund[]; value: FiFund | null; onChange: (fund: FiFund | null) => void }) {
+export function FundPicker({ id, label, funds, value, onChange }: { id: string; label: string; funds: FiFund[]; value: FiFund | null; onChange: (fund: FiFund | null) => void }) {
   return <div className="compare-picker">
     <label htmlFor={id}>{label}</label>
     <Combobox items={funds} value={value} onValueChange={onChange} itemToStringLabel={(fund: FiFund) => fund.name}

@@ -44,7 +44,7 @@ export function FundFavoritesProvider({ children }: { children: ReactNode }) {
   return <FavoritesContext value={{ funds, ready, error, message, save }}>{children}</FavoritesContext>;
 }
 
-function useFavorites() {
+export function useFavorites() {
   const state = useContext(FavoritesContext);
   if (!state) throw new Error('Favorites provider missing');
   return state;
