@@ -5,6 +5,8 @@ import { Layers3, Plus, Trash2 } from 'lucide-react';
 import { FundPicker } from '@/components/fund-comparison';
 import { useFavorites } from '@/components/fund-favorites';
 import { DataFreshness } from '@/components/data-freshness';
+import { ResultExplanation } from '@/components/result-explanation';
+import { explainPortfolio } from '@/lib/funds/explanations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -114,6 +116,7 @@ export function FundPortfolio({ dataset, dataState }: { dataset: FiFundDataset |
       </div>
       <DataFreshness observationLabel={result.status === 'ready' ? 'Innehaven i översikten avser' : 'FI-underlagets innehav avser'} observationDate={result.status === 'ready' ? result.reportDate : dataset?.source.reportDate} publishedAt={dataset?.source.publishedAt}
         note="Historiska kvartalsinnehav, inte dagens portföljer. Beräkningen kombinerar dina angivna andelar med fondvikterna på rapportdagen. Hämtningstid från FI saknas i underlaget." />
+      <ResultExplanation id="portfolio-explanation" explanation={explainPortfolio(result)} />
       {result.status === 'ready' && <div className="portfolio-results">
         <h3>Största kända positionerna</h3><p>Högst tio visas, sorterade efter deras sammanlagda andel av din portfölj.</p>
         {result.positions.length > 0 ? <PositionTable positions={result.positions.slice(0, 10)} caption="Största kända positionerna." /> : <p className="portfolio-notice">Inga innehav med användbart ISIN finns för de valda fonderna. Hela portföljen saknar täckning.</p>}

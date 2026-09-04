@@ -24,6 +24,8 @@ import { FundComparison } from '@/components/fund-comparison';
 import { FundPortfolio } from '@/components/fund-portfolio';
 import { FundWatchlists } from '@/components/fund-watchlists';
 import { DataFreshness } from '@/components/data-freshness';
+import { ResultExplanation } from '@/components/result-explanation';
+import { explainFund } from '@/lib/funds/explanations';
 import { FavoriteButton, FundFavoritesProvider, MyFunds } from '@/components/fund-favorites';
 import {
   Popover,
@@ -76,6 +78,8 @@ function FundHome() {
     [selectedFund],
   );
   const isFiFund = selectedFund.source === 'fi';
+  const fundExplanation = useMemo(() => explainFund(selectedFund.source === 'fi'
+    ? fiDataset?.funds.find(fund => fund.id === selectedFund.sourceId) : null), [fiDataset, selectedFund]);
   const searchResults = useMemo(() => {
     if (!fiDataset || query === selectedFund.name) return [];
     return searchFiFunds(fiDataset.funds, query);
@@ -289,6 +293,8 @@ function FundHome() {
             </p>
           </article>
         </section>
+
+        <ResultExplanation id="fund-explanation" explanation={fundExplanation} />
 
         <section className="holdings-card" aria-labelledby="holdings-title">
           <div className="holdings-heading">

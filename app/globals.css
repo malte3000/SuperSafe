@@ -340,6 +340,15 @@
 .portfolio-method p { margin-top: 12px; max-width: 950px; color: var(--muted-foreground); }
 .portfolio-method a { display: inline-block; margin-top: 12px; text-decoration: underline; text-underline-offset: 3px; }
 
+.result-explanation { margin: 24px 0; padding: 22px 24px; border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 12px; background: var(--card); }
+.result-explanation h3 { font-size: 1.125rem; font-weight: 650; letter-spacing: -.02em; }
+.result-explanation .result-explanation-context { margin-top: 8px; font-size: .875rem; line-height: 1.7; color: var(--muted-foreground); }
+.result-explanation ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 24px; margin-top: 20px; list-style: none; }
+.result-explanation li { min-width: 0; }
+.result-explanation h4 { font-size: 1rem; font-weight: 600; line-height: 1.6; }
+.result-explanation li p { margin-top: 6px; font-size: 1rem; line-height: 1.75; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.result-explanation .result-explanation-limit { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); font-size: .875rem; line-height: 1.7; color: var(--muted-foreground); }
+
 @media (max-width: 900px) {
   .portfolio-layout { grid-template-columns: 1fr; }
 }
@@ -350,6 +359,7 @@
 }
 
 @media (max-width: 680px) {
+  .result-explanation { padding: 18px; }
   .portfolio-card, .portfolio-overview { padding: 18px; }
   .portfolio-metrics { grid-template-columns: 1fr; }
   .my-funds { padding: 18px; }

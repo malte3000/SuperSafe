@@ -91,6 +91,22 @@ fördelning döljer resultatet direkt. Summerade innehavsvikter över 100 %
 undvika täckning över 100 %. Även avrundade källvärden kan utlösa spärren.
 Tester: `node --test tests/portfolio.test.mjs`.
 
+## Förklaringar på vanlig svenska
+
+Giltiga FI-resultat får en deterministisk textförklaring vid den enskilda
+fondanalysen, fondjämförelsen och portföljöversikten. Procentandelar översätts
+till räkneexempel per 100 kronor. Texterna använder bara samma validerade vikter,
+ISIN-matchningar, täckning och rapportdatum som redan visas; de anropar ingen
+språkmodell och hittar inte på marknadsdata, riskbetyg eller prognoser.
+
+Förklaringarna skiljer uttryckligen innehav från uppgång eller nedgång, visar att
+okänd täckning inte är samma sak som kontanter och varnar för att noll hittad
+överlappning inte bevisar god riskspridning. En fondförklaring döljs om datum
+eller vikter är ogiltiga. Jämförelse- och portföljförklaringar visas endast när
+respektive befintlig beräkning har status `ready`. Kronorna är proportionella
+exempel, inte användarens faktiska saldo eller investeringsrådgivning.
+Tester: `node --test tests/explanations.test.mjs`.
+
 ## Daglig topplista för premiepension
 
 `/api/funds/top-daily` hämtar Pensionsmyndighetens offentliga kurslista:

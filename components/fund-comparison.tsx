@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react';
 import { DataFreshness } from '@/components/data-freshness';
 import { FavoriteButton } from '@/components/fund-favorites';
+import { ResultExplanation } from '@/components/result-explanation';
+import { explainComparison } from '@/lib/funds/explanations';
 import { ArrowLeftRight, Info, Layers3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,6 +80,7 @@ export function FundComparison({ dataset, dataState }: { dataset: FiFundDataset 
             <div><span className="compare-score">{percent(result.overlapWeight)}</span><h3>Identifierad gemensam vikt</h3><p>{result.shared.length} gemensamma värdepapper med samma ISIN.</p></div>
             <div className="compare-explanation"><Info aria-hidden="true" /><p>Detta gäller bara de innehav vi kan identifiera i båda fonderna. Den totala överlappningen kan vara större. Siffran är varken avkastning eller ett riskbetyg.</p></div>
           </div>
+          <ResultExplanation id="comparison-explanation" explanation={explainComparison(result, left.reportDate)} />
           <div className="compare-coverage-grid"><Coverage fund={left} /><Coverage fund={right} /></div>
           {result.shared.length > 0 ? <Table className="compare-table">
             <TableCaption>Gemensamma värdepapper · rapportdatum {left.reportDate}. Sorterat efter gemensam vikt.</TableCaption>
