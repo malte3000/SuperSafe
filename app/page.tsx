@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { DailyTopFunds } from '@/components/daily-top-funds';
+import { FeeCalculator } from '@/components/fee-calculator';
 import { FundComparison } from '@/components/fund-comparison';
 import { FundPortfolio } from '@/components/fund-portfolio';
 import { FundWatchlists } from '@/components/fund-watchlists';
@@ -156,6 +157,7 @@ function FundHome() {
             <Button variant="ghost" nativeButton={false} render={<a href="#jamfor-fonder" aria-label="Jämför fonder" />} className="hidden text-emerald-50 hover:bg-white/10 hover:text-white sm:inline-flex">Jämför fonder</Button>
             <Button variant="ghost" nativeButton={false} render={<a href="#mina-fonder" aria-label="Mina fonder" />} className="text-emerald-50 hover:bg-white/10 hover:text-white">Mina fonder</Button>
             <Button variant="ghost" nativeButton={false} render={<a href="#portfolj" aria-label="Portföljöversikt" />} className="text-emerald-50 hover:bg-white/10 hover:text-white">Portfölj</Button>
+            <Button variant="ghost" nativeButton={false} render={<a href="#avgiftskalkyl" aria-label="Avgiftskalkylator" />} className="text-emerald-50 hover:bg-white/10 hover:text-white">Avgifter</Button>
           </div>
         </div>
       </header>
@@ -207,6 +209,7 @@ function FundHome() {
           requestAnimationFrame(() => { const heading = document.getElementById('fund-analysis-title'); heading?.focus({ preventScroll: true }); heading?.scrollIntoView({ block: 'start' }); });
         }} />
         <FundPortfolio dataset={fiDataset} dataState={dataState} />
+        <FeeCalculator />
         <FundWatchlists />
         <FundComparison dataset={fiDataset} dataState={dataState} />
         <DailyTopFunds />

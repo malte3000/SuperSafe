@@ -107,6 +107,36 @@ respektive befintlig beräkning har status `ready`. Kronorna är proportionella
 exempel, inte användarens faktiska saldo eller investeringsrådgivning.
 Tester: `node --test tests/explanations.test.mjs`.
 
+## Avgiftskalkylator
+
+Kalkylatorn jämför två manuellt angivna årliga fondavgifter med samma
+startkapital, månadssparande, spartid och antagna avkastning före avgifter.
+Inmatningen är tillfälligt React-tillstånd och skickas inte till servern eller
+sparas vid omladdning. Inga avgifter kopplas automatiskt till en fond eller
+ett kontoslag, eftersom exempelvis premiepensionens rabatterade avgift kan
+skilja sig från avgiften på den öppna marknaden.
+
+Beräkningen omvandlar den årliga avkastningen till en geometriskt motsvarande
+månadsutveckling. Sedan dras `årlig avgift / 12` från månadens kapital och
+månadssparandet läggs till sist i månaden. Den visar uppskattat slutvärde,
+uppskattat löpande avgiftsavdrag och total avgiftseffekt jämfört med samma
+scenario utan fondavgift. Den totala effekten inkluderar även utebliven
+avkastning på avgifterna och är därför inte samma sak som avgifterna som dras.
+
+Modellen är avsiktligt förenklad: verkliga fondavgifter beräknas normalt
+dagligen, avkastningen är inte jämn och framtida avkastning är okänd. Skatt,
+valuta, köp-/säljkostnader, plattformsavgifter, prestationsavgifter, rabatter
+och framtida ändringar ingår inte. Användaren hänvisas till fondens faktablad
+och Pensionsmyndighetens officiella information:
+https://www.pensionsmyndigheten.se/forsta-din-pension/valj-och-byt-fonder/avgifter-och-rabatter-inom-premiepensionen
+
+Inmatningsgränserna är 0–100 miljoner kronor i startkapital, 0–1 miljon kronor
+i månaden, 1–50 hela år, −20–20 procent avkastning och 0–10 procent avgift.
+Komma eller punkt accepteras med högst två decimaler; exponent-, hex-,
+plus- och icke-finita format avvisas. Minst ett av sparbeloppen måste vara
+större än noll. Ogiltig inmatning döljer samtliga resultat direkt.
+Tester: `node --test tests/fee-calculator.test.mjs`.
+
 ## Daglig topplista för premiepension
 
 `/api/funds/top-daily` hämtar Pensionsmyndighetens offentliga kurslista:

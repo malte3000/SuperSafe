@@ -340,6 +340,54 @@
 .portfolio-method p { margin-top: 12px; max-width: 950px; color: var(--muted-foreground); }
 .portfolio-method a { display: inline-block; margin-top: 12px; text-decoration: underline; text-underline-offset: 3px; }
 
+.fee-card { scroll-margin-top: 24px; margin-bottom: 30px; padding: 26px; border: 1px solid var(--border); border-radius: 20px; background: var(--card); box-shadow: 0 4px 18px rgba(25,65,51,.035); }
+.fee-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 18px; }
+.fee-heading h2 { margin-top: 12px; font-size: clamp(1.5rem, 3vw, 1.875rem); font-weight: 650; letter-spacing: -.04em; }
+.fee-heading p { max-width: 760px; margin-top: 8px; font-size: 1rem; line-height: 1.7; color: var(--muted-foreground); }
+.fee-heading > span { font-size: .8125rem; color: var(--muted-foreground); }
+.fee-layout { display: grid; grid-template-columns: minmax(300px, .75fr) minmax(0, 1.25fr); gap: 28px; margin-top: 26px; }
+.fee-controls { align-self: start; padding: 22px; border-radius: 16px; background: var(--secondary); }
+.fee-controls h3, .fee-options legend { font-size: 1rem; font-weight: 650; }
+.fee-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.fee-field { min-width: 0; }
+.fee-field label { display: block; margin-bottom: 7px; font-size: .875rem; font-weight: 600; line-height: 1.5; }
+.fee-input { display: flex; align-items: center; min-height: 44px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+.fee-input:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 20%, transparent); }
+.fee-input input { min-height: 42px; border: 0; border-radius: 0; font-size: 1rem; font-variant-numeric: tabular-nums; box-shadow: none; }
+.fee-input input:focus-visible { box-shadow: none; }
+.fee-input span { padding: 0 12px; color: var(--muted-foreground); font-size: .875rem; }
+.fee-field small { display: block; margin-top: 6px; color: var(--muted-foreground); font-size: .75rem; line-height: 1.5; }
+.fee-options { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border); }
+.fee-options > div { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+.fee-local { margin-top: 18px; font-size: .8125rem; line-height: 1.6; color: var(--muted-foreground); }
+.fee-error { margin-top: 14px; padding: 12px; border-radius: 10px; background: color-mix(in oklab, var(--destructive) 10%, transparent); color: var(--destructive); font-size: .875rem; line-height: 1.6; }
+.fee-results { min-width: 0; }
+.fee-answer { padding: 20px 22px; border-radius: 14px; background: #0b5b43; color: white; }
+.fee-answer > span { display: block; font-size: .875rem; color: rgba(255,255,255,.75); }
+.fee-answer > strong { display: block; margin-top: 6px; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.15; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+.fee-answer p { margin-top: 8px; font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,.85); }
+.fee-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.fee-result-card { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 14px; }
+.fee-result-title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.fee-result-title h3 { font-size: 1rem; font-weight: 650; }
+.fee-final-value { display: block; margin-top: 20px; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.fee-final-value + span { display: block; margin-top: 4px; color: var(--muted-foreground); font-size: .8125rem; }
+.fee-bar { height: 7px; overflow: hidden; margin-top: 15px; border-radius: 99px; background: var(--secondary); }
+.fee-bar i { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.fee-result-card dl { margin-top: 20px; }
+.fee-result-card dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--border); }
+.fee-result-card dt { font-size: .8125rem; line-height: 1.5; color: var(--muted-foreground); }
+.fee-result-card dd { flex-shrink: 0; font-size: .875rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.fee-baseline { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--secondary); }
+.fee-baseline svg { flex: 0 0 18px; width: 18px; margin-top: 3px; }
+.fee-baseline p { font-size: .875rem; line-height: 1.7; color: var(--muted-foreground); }
+.fee-baseline strong { color: var(--foreground); }
+.fee-method { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); font-size: .875rem; line-height: 1.8; }
+.fee-method summary { cursor: pointer; font-weight: 600; }
+.fee-method p { max-width: 1050px; margin-top: 12px; color: var(--muted-foreground); }
+.fee-method a { display: inline-block; margin-top: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.fee-method summary:focus-visible, .fee-method a:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+
 .result-explanation { margin: 24px 0; padding: 22px 24px; border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 12px; background: var(--card); }
 .result-explanation h3 { font-size: 1.125rem; font-weight: 650; letter-spacing: -.02em; }
 .result-explanation .result-explanation-context { margin-top: 8px; font-size: .875rem; line-height: 1.7; color: var(--muted-foreground); }
@@ -350,7 +398,7 @@
 .result-explanation .result-explanation-limit { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); font-size: .875rem; line-height: 1.7; color: var(--muted-foreground); }
 
 @media (max-width: 900px) {
-  .portfolio-layout { grid-template-columns: 1fr; }
+  .portfolio-layout, .fee-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 1100px) {
@@ -359,6 +407,8 @@
 }
 
 @media (max-width: 680px) {
+  .fee-card, .fee-controls { padding: 18px; }
+  .fee-fields, .fee-options > div, .fee-result-grid { grid-template-columns: 1fr; }
   .result-explanation { padding: 18px; }
   .portfolio-card, .portfolio-overview { padding: 18px; }
   .portfolio-metrics { grid-template-columns: 1fr; }
