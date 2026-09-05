@@ -49,7 +49,7 @@ test('exact names precede partial names and results are not silently limited', (
   assert.equal(searchFiFunds(items, 'avanza', 6).length, 6);
 });
 test('main search and comparison filter agree on real FI funds', async () => {
-  const { funds: real } = JSON.parse(await readFile(new URL('../public/data/fi-funds-2026q2.json', import.meta.url), 'utf8'));
+  const { funds: real } = JSON.parse(await readFile(new URL('../public/data/fi-funds-latest.json', import.meta.url), 'utf8'));
   for (const query of ['LF Global', 'global lansforsakringar', 'avanza', 'SE 0005-188836', 'DNB Global Indeks']) {
     const main = searchFiFunds(real, query).map(f => f.id).sort();
     const comparison = real.filter(f => matchesFiFund(f, query)).map(f => f.id).sort();

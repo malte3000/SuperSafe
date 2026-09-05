@@ -112,7 +112,7 @@ test('ten largest is a bounded subset and recurrence requires two distinct funds
 });
 
 test('real FI portfolio is deterministic, bounded, additive and does not mutate its input', async () => {
-  const dataset = JSON.parse(await readFile(new URL('../public/data/fi-funds-2026q2.json', import.meta.url), 'utf8'));
+  const dataset = JSON.parse(await readFile(new URL('../public/data/fi-funds-latest.json', import.meta.url), 'utf8'));
   const entries = ['SE0001718388', 'SE0009773716'].map(id => ({ fund: dataset.funds.find(fund => fund.id === id), allocation: '50' }));
   const original = JSON.stringify(entries);
   const result = analyzePortfolio(entries);

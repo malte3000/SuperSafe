@@ -1,13 +1,7 @@
-export type HoldingDirection = 'positive' | 'neutral' | 'negative';
-
 export type Holding = {
   name: string;
   ticker: string;
   weight: number;
-  probability?: number;
-  confidence?: number;
-  direction?: HoldingDirection;
-  reason?: string;
   isin?: string;
   country?: string;
   currency?: string;
@@ -15,12 +9,10 @@ export type Holding = {
 };
 
 export type Fund = {
-  source: 'demo' | 'fi';
+  source: 'fi';
   sourceId?: string;
   name: string;
   category: string;
-  riskClass: number;
-  updated: string;
   holdings: Holding[];
   isin?: string;
   company?: string;

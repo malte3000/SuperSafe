@@ -1,0 +1,45 @@
+name: Update FI fund holdings
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-fi-funds.yml'
+      - 'scripts/import-fi-funds.ps1'
+      - 'scripts/update-fi-funds.ps1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fi-holdings-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.repository == 'malte3000/SuperSafe' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Download and validate latest official FI holdings
+        shell: pwsh
+        run: ./scripts/update-fi-funds.ps1
+      - name: Run fund data tests
+        run: node --test tests/*.test.mjs
+      - name: Save a newer official dataset
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- public/data/fi-funds-latest.json public/data/fi-funds-latest.meta.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: update official FI fund holdings'
+          git push origin HEAD:main

@@ -3,7 +3,24 @@ param(
   [string]$InputDirectory,
 
   [Parameter(Mandatory = $true)]
-  [string]$OutputFile
+  [string]$OutputFile,
+
+  [Parameter(Mandatory = $true)]
+  [ValidatePattern('^\d{4} Q[1-4]$')]
+  [string]$Period,
+
+  [Parameter(Mandatory = $true)]
+  [ValidatePattern('^\d{4}-\d{2}-\d{2}$')]
+  [string]$PublishedAt,
+
+  [Parameter(Mandatory = $true)]
+  [string]$ArchiveName,
+
+  [Parameter(Mandatory = $false)]
+  [string]$FetchedAt = [DateTimeOffset]::UtcNow.ToString('o'),
+
+  [Parameter(Mandatory = $false)]
+  [string]$SourceUrl = 'https://www.fi.se/sv/vara-register/fondinnehav-per-kvartal/'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -76,15 +93,27 @@ $funds = foreach ($file in Get-ChildItem -LiteralPath $InputDirectory -Recurse -
   }
 }
 
+$fundList = @($funds | Sort-Object -Property name)
+if ($fundList.Count -lt 100) {
+  throw "Import rejected: only $($fundList.Count) funds were parsed"
+}
+
+$reportDates = @($fundList.reportDate | Where-Object { $_ } | Sort-Object -Unique)
+if ($reportDates.Count -ne 1 -or $reportDates[0] -notmatch '^\d{4}-\d{2}-\d{2}$') {
+  throw "Import rejected: expected one valid report date, got $($reportDates -join ', ')"
+}
+
 $dataset = [pscustomobject][ordered]@{
   source = [ordered]@{
     name = 'Finansinspektionen'
-    period = '2026 Q2'
-    reportDate = '2026-06-30'
-    publishedAt = '2026-08-20'
-    url = 'https://www.fi.se/sv/vara-register/fondinnehav/'
+    period = $Period
+    reportDate = $reportDates[0]
+    publishedAt = $PublishedAt
+    fetchedAt = $FetchedAt
+    archiveName = $ArchiveName
+    url = $SourceUrl
   }
-  funds = @($funds | Sort-Object -Property name)
+  funds = $fundList
 }
 
 $outputDirectory = Split-Path -Parent $OutputFile

@@ -65,7 +65,7 @@ test('limit prevents new favorites but never blocks removal', () => {
   assert.equal(setFavorite(db, fi, true).length, MAX_FAVORITES);
 });
 test('all FI dataset IDs are supported and remain exact through analysis conversion', () => {
-  const dataset = JSON.parse(readFileSync(new URL('../public/data/fi-funds-2026q2.json', import.meta.url), 'utf8'));
+  const dataset = JSON.parse(readFileSync(new URL('../public/data/fi-funds-latest.json', import.meta.url), 'utf8'));
   for (const fund of dataset.funds) {
     assert.equal(fiFundToFund(fund).sourceId, fund.id);
     assert.equal(setFavorite(storage(), { source: 'fi', id: fund.id, name: fund.name }, true)[0].id, fund.id);

@@ -6,7 +6,7 @@ En svensk fondanalys-pilot som visar rapporterade fondinnehav och innehavskoncen
 
 ### Mina fonder (webbläsarlokala favoriter)
 
-Stjärnor i FI-sökresultat, vald fond, innehavsjämförelse, PPM-topplista och
+Stjärnor i FI-sökresultat, vald fond, innehavsjämförelse och avgiftslistor
 avgiftslistor sparar genvägar i `supersafe:favorite-funds:v1` i localStorage.
 Användaren har valt denna enhetslokala första version: inget konto, ingen
 synkning mellan enheter och ingen serverlagring av favoriter. Endast källa,
@@ -15,7 +15,7 @@ Rensad webbplatsdata eller avslutat privat läge kan radera listan.
 
 FI identifieras med datasetets exakta fond-ID och PPM med sexsiffrigt fondnummer.
 Källorna hålls åtskilda; namn används aldrig för automatisk ihopslagning.
-Demoexempel kan inte sparas. Saknade FI-fonder behålls som markerade genvägar,
+Saknade FI-fonder behålls som markerade genvägar,
 inte som gamla innehavsdata. FI-favoriter öppnar aktuell tillgänglig analys;
 PPM-favoriter öppnar Pensionsmyndighetens fondfakta och utlovar inte FI-täckning.
 
@@ -29,10 +29,11 @@ Pilotens riktiga fonddata kommer från Finansinspektionens öppna register över
 värdepappersfonders innehav. Nuvarande data avser 2026 Q2, med rapportdatum
 2026-06-30 och publiceringsdatum 2026-08-20.
 
-Källa: https://www.fi.se/sv/vara-register/fondinnehav/
+Källa: https://www.fi.se/sv/vara-register/fondinnehav-per-kvartal/
 
-Marknadssignaler är ännu inte anslutna. Demofondernas sannolikheter är fortsatt
-tydligt märkta som demodata.
+Ingen demo- eller prognosdata visas. Startsidan laddar FI-underlaget först när
+användaren söker eller öppnar ett verktyg som behöver det. Rapportdatum,
+publiceringsdatum och SuperSafes hämtningstid visas som separata uppgifter.
 
 ## Sökning
 
@@ -45,7 +46,7 @@ med mellanslag/bindestreck men stavfel i ISIN korrigeras inte automatiskt.
 Huvudfältet visar sex träffar först, sedan tolv till per klick på Visa fler.
 Fondjämförelsens rullbara lista har inte längre en gräns på 30 träffar.
 Exakt fondnamn/ISIN eller en ensam träff kan öppnas direkt; annars måste användaren
-välja rätt fond. Demo kräver uttryckligt val eller exakt demonamn.
+välja rätt fond.
 Inga nya fonder har lagts till i detta steg. Saknat underlag skiljs från laddningsfel.
 
 Söktester: `node --test tests/fund-search.test.mjs` (Node 24).
@@ -260,10 +261,22 @@ Tester: `node --test tests/watchlists.test.mjs` (Node 24).
 
 ## Uppdatera FI-data
 
-Ladda ned och packa upp FI:s senaste kvartalsfil och kör sedan:
+GitHub Actions kör `update-fi-funds.yml` varje måndag och kan även startas
+manuellt. Uppdateraren läser FI:s officiella kvartalssida, väljer den senaste
+ZIP-filen, importerar XML-innehållet till den stabila filen
+`public/data/fi-funds-latest.json` och ersätter inte underlaget om importen är
+för liten, ogiltig eller äldre än den nuvarande filen. Ett oförändrat arkiv ger
+ingen ny commit och ändrar därför inte den redovisade hämtningstiden.
+Den publicerade sidan kontrollerar det lilla offentliga
+`fi-funds-latest.meta.json` när FI-data behövs och hämtar bara den stora
+GitHub-filen om manifestet visar ett nyare validerat underlag. Den inbyggda
+filen är reserv om GitHub inte kan nås.
+
+Kör samma kontrollerade uppdatering lokalt med:
 
 ```powershell
-.\scripts\import-fi-funds.ps1 `
-  -InputDirectory '.\work\fi-YYYYqN' `
-  -OutputFile '.\public\data\fi-funds-YYYYqN.json'
+.\scripts\update-fi-funds.ps1
 ```
+
+`scripts/import-fi-funds.ps1` är den lägre nivån för ett redan uppackat
+XML-underlag och kräver uttryckliga källmetadata.

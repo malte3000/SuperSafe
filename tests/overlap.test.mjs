@@ -44,7 +44,7 @@ test('empty holdings are valid but do not imply full coverage', () => {
   assert.equal(result.left.identifiedWeight, 0);
 });
 test('real FI example is comparable, symmetric and bounded by known coverage', async () => {
-  const data = JSON.parse(await readFile(new URL('../public/data/fi-funds-2026q2.json', import.meta.url), 'utf8'));
+  const data = JSON.parse(await readFile(new URL('../public/data/fi-funds-latest.json', import.meta.url), 'utf8'));
   const a = data.funds.find(fund => fund.id === 'SE0001718388');
   const b = data.funds.find(fund => fund.id === 'SE0009773716');
   const result = compareFunds(a, b);
