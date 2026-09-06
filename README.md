@@ -40,8 +40,12 @@ publiceringsdatum och SuperSafes hämtningstid visas som separata uppgifter.
 Huvudsökningen och fondjämförelsen använder samma matchningsregler i `lib/funds/fi-funds.ts`:
 diakritiska tecken, extra mellanslag och skiljetecken normaliseras; sökord kan
 stå i valfri ordning; hela ordet `LF` utökas till `Länsförsäkringar`.
-Sökningen matchar fondnamn, fondbolag och ISIN. Identifierare får formateras
+`HB` och `SHB` utökas till `Handelsbanken`. Sökningen matchar fondnamn,
+fondbolag, ISIN och FI:s fondnummer. Identifierare får formateras
 med mellanslag/bindestreck men stavfel i ISIN korrigeras inte automatiskt.
+När ingen vanlig träff finns kan upp till fem liknande fondnamn visas. Förslagen
+tillåter högst ett teckenfel per helt sökord på minst fem tecken och väljer
+aldrig en fond automatiskt.
 
 Huvudfältet visar sex träffar först, sedan tolv till per klick på Visa fler.
 Fondjämförelsens rullbara lista har inte längre en gräns på 30 träffar.

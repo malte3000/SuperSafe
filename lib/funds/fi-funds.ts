@@ -117,21 +117,30 @@ export function normalizeFundSearch(value: string) {
 
 function searchTerm(query: string) {
   // Expand only known, whole-word abbreviations, never fragments of fund names.
-  const aliases: Record<string, string> = { lf: 'lansforsakringar' };
+  const aliases: Record<string, string> = {
+    hb: 'handelsbanken',
+    lf: 'lansforsakringar',
+    shb: 'handelsbanken',
+  };
   return normalizeFundSearch(query)
     .split(' ')
     .map((word) => aliases[word] ?? word)
     .join(' ');
 }
 
+function fundIdentifiers(fund: FiFund) {
+  return [fund.isin, fund.instituteNumber]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => normalizeFundSearch(value).replace(/ /g, ''));
+}
+
 export function isExactFiFundMatch(fund: FiFund, query: string) {
   const term = searchTerm(query);
+  const compact = term.replace(/ /g, '');
   return (
     term.length >= 2 &&
     (normalizeFundSearch(fund.name) === term ||
-      (!!fund.isin &&
-        normalizeFundSearch(fund.isin).replace(/ /g, '') ===
-          term.replace(/ /g, '')))
+      fundIdentifiers(fund).includes(compact))
   );
 }
 
@@ -140,10 +149,10 @@ function matchScore(fund: FiFund, query: string) {
   if (term.length < 2) return -1;
   if (isExactFiFundMatch(fund, query)) return 100;
   const compact = term.replace(/ /g, '');
-  // An ISIN-like query must match the identifier, not an unrelated fund name.
-  if (/^[a-z]{2}\d[a-z0-9]*$/.test(compact)) {
+  // Identifier-like queries must match identifiers, not unrelated fund names.
+  if (/^[a-z]{2}\d[a-z0-9]*$/.test(compact) || /^\d+$/.test(compact)) {
     return compact.length >= 4 &&
-      normalizeFundSearch(fund.isin ?? '').startsWith(compact)
+      fundIdentifiers(fund).some((identifier) => identifier.startsWith(compact))
       ? 90
       : -1;
   }
@@ -155,6 +164,84 @@ function matchScore(fund: FiFund, query: string) {
   if (tokens.every((token) => name.includes(token))) return 60;
   const withCompany = `${name} ${normalizeFundSearch(fund.company)}`;
   return tokens.every((token) => withCompany.includes(token)) ? 40 : -1;
+}
+
+function differsByAtMostOneEdit(candidate: string, wanted: string) {
+  if (candidate === wanted) return true;
+  if (candidate.length < 5 || wanted.length < 5) return false;
+  if (Math.abs(candidate.length - wanted.length) > 1) return false;
+
+  if (candidate.length === wanted.length) {
+    const differences: number[] = [];
+    for (let index = 0; index < candidate.length; index += 1) {
+      if (candidate[index] !== wanted[index]) differences.push(index);
+      if (differences.length > 2) return false;
+    }
+    if (differences.length <= 1) return true;
+    const [first, second] = differences;
+    return (
+      second === first + 1 &&
+      candidate[first] === wanted[second] &&
+      candidate[second] === wanted[first]
+    );
+  }
+
+  const [shorter, longer] =
+    candidate.length < wanted.length
+      ? [candidate, wanted]
+      : [wanted, candidate];
+  let shortIndex = 0;
+  let longIndex = 0;
+  let skipped = false;
+  while (shortIndex < shorter.length && longIndex < longer.length) {
+    if (shorter[shortIndex] === longer[longIndex]) {
+      shortIndex += 1;
+      longIndex += 1;
+      continue;
+    }
+    if (skipped) return false;
+    skipped = true;
+    longIndex += 1;
+  }
+  return true;
+}
+
+/**
+ * Offers conservative spelling suggestions without ever selecting a fund.
+ * Every query word must match a complete fund/company word with at most one
+ * edit, and short words must match exactly.
+ */
+export function suggestFiFunds(funds: FiFund[], query: string, limit = 5) {
+  const term = searchTerm(query);
+  if (term.length < 2 || searchFiFunds(funds, query, 1).length > 0) return [];
+  const queryWords = term.split(' ').filter(Boolean);
+  if (queryWords.length === 0) return [];
+
+  return funds
+    .map((fund) => {
+      const words = normalizeFundSearch(`${fund.name} ${fund.company}`)
+        .split(' ')
+        .filter(Boolean);
+      let edits = 0;
+      const matches = queryWords.every((queryWord) => {
+        if (words.includes(queryWord)) return true;
+        const near = words.some((word) =>
+          differsByAtMostOneEdit(word, queryWord),
+        );
+        if (near) edits += 1;
+        return near;
+      });
+      return { fund, edits, matches };
+    })
+    .filter((item) => item.matches && item.edits > 0)
+    .sort(
+      (a, b) =>
+        a.edits - b.edits ||
+        a.fund.name.localeCompare(b.fund.name, 'sv-SE') ||
+        a.fund.id.localeCompare(b.fund.id),
+    )
+    .slice(0, limit)
+    .map((item) => item.fund);
 }
 
 export function matchesFiFund(fund: FiFund, query: string) {

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { env } from 'cloudflare:workers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -12,17 +12,18 @@ const geistMono = Geist_Mono({
 export function generateMetadata(): Metadata {
   const origin =
     (env as unknown as { SITE_ORIGIN?: string }).SITE_ORIGIN ||
-    'http://localhost:3000';
+    'https://supersafe-malte3000.maltelindahl.chatgpt.site';
   const description =
     'Sök svenska fonder och förstå rapporterade innehav, koncentration, överlappning och avgifternas långsiktiga effekt.';
   return {
     metadataBase: new URL(origin),
     title: 'SuperSafe – förstå vad fonden faktiskt äger',
     description,
+    alternates: { canonical: '/' },
     openGraph: {
       title: 'SuperSafe – förstå vad fonden faktiskt äger',
       description,
-      images: ['/og.png'],
+      images: ['/og.jpg'],
       type: 'website',
       locale: 'sv_SE',
     },
@@ -30,10 +31,15 @@ export function generateMetadata(): Metadata {
       card: 'summary_large_image',
       title: 'SuperSafe – förstå vad fonden faktiskt äger',
       description,
-      images: ['/og.png'],
+      images: ['/og.jpg'],
     },
   };
 }
+
+export const viewport: Viewport = {
+  colorScheme: 'light',
+  themeColor: '#071410',
+};
 
 export default function RootLayout({
   children,
