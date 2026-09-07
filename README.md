@@ -47,6 +47,13 @@ När ingen vanlig träff finns kan upp till fem liknande fondnamn visas. Försla
 tillåter högst ett teckenfel per helt sökord på minst fem tecken och väljer
 aldrig en fond automatiskt.
 
+Huvudsökningen har dessutom fyra verifierade utlandsregistrerade testfonder i
+`lib/funds/reference-funds.ts`: BGF Latin American A2, BGF World Healthscience
+A2, BGF World Energy A2 och ODIN Emerging Markets C SEK. De kopplas till sina
+officiella PPM-fondnummer och fondfaktasidor. BGF och BlackRock fungerar som
+namnvarianter. Eftersom fonderna inte ingår i FI:s svenska innehavsregister
+visas ingen konstruerad innehavsanalys för dem.
+
 Huvudfältet visar sex träffar först, sedan tolv till per klick på Visa fler.
 Fondjämförelsens rullbara lista har inte längre en gräns på 30 träffar.
 Exakt fondnamn/ISIN eller en ensam träff kan öppnas direkt; annars måste användaren

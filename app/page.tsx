@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Database,
+  ExternalLink,
   Info,
   Search,
   ShieldCheck,
@@ -64,6 +65,13 @@ import {
   type FiFund,
   type FiFundDataset,
 } from '@/lib/funds/fi-funds';
+import {
+  REFERENCE_FUNDS,
+  referenceFundUrl,
+  resolveReferenceFund,
+  searchReferenceFunds,
+  type ReferenceFund,
+} from '@/lib/funds/reference-funds';
 
 const FeeCalculator = lazy(() =>
   import('@/components/fee-calculator').then((module) => ({
@@ -161,6 +169,8 @@ export default function Home() {
 function FundHome() {
   const [query, setQuery] = useState('');
   const [selectedFiFund, setSelectedFiFund] = useState<FiFund | null>(null);
+  const [selectedReferenceFund, setSelectedReferenceFund] =
+    useState<ReferenceFund | null>(null);
   const [visibleResults, setVisibleResults] = useState(6);
   const [fiDataset, setFiDataset] = useState<FiFundDataset | null>(null);
   const [dataState, setDataState] = useState<DataState>('idle');
@@ -186,9 +196,26 @@ function FundHome() {
     [selectedFiFund],
   );
   const searchResults = useMemo(() => {
-    if (!fiDataset || query === selectedFiFund?.name) return [];
+    if (
+      !fiDataset ||
+      query === selectedFiFund?.name ||
+      query === selectedReferenceFund?.name
+    )
+      return [];
     return searchFiFunds(fiDataset.funds, query);
-  }, [fiDataset, query, selectedFiFund?.name]);
+  }, [fiDataset, query, selectedFiFund?.name, selectedReferenceFund?.name]);
+  const referenceResults = useMemo(() => {
+    if (query === selectedFiFund?.name || query === selectedReferenceFund?.name)
+      return [];
+    return searchReferenceFunds(REFERENCE_FUNDS, query);
+  }, [query, selectedFiFund?.name, selectedReferenceFund?.name]);
+  const combinedSearchResults = useMemo(
+    () => [
+      ...referenceResults.map((fund) => ({ kind: 'reference' as const, fund })),
+      ...searchResults.map((fund) => ({ kind: 'fi' as const, fund })),
+    ],
+    [referenceResults, searchResults],
+  );
   const suggestedResults = useMemo(() => {
     if (!fiDataset || query === selectedFiFund?.name) return [];
     return suggestFiFunds(fiDataset.funds, query);
@@ -197,7 +224,8 @@ function FundHome() {
     dataState === 'ready' &&
     normalizeFundSearch(query).length >= 2 &&
     query !== selectedFiFund?.name &&
-    searchResults.length === 0;
+    query !== selectedReferenceFund?.name &&
+    combinedSearchResults.length === 0;
 
   useEffect(
     () => () => {
@@ -237,6 +265,9 @@ function FundHome() {
     const requestedFund = new URLSearchParams(window.location.search).get(
       'fund',
     );
+    const requestedReferenceId = new URLSearchParams(
+      window.location.search,
+    ).get('ppmFund');
     const toolByHash: Record<string, ToolName> = {
       '#mina-fonder': 'mina',
       '#jamfor-fonder': 'compare',
@@ -257,6 +288,19 @@ function FundHome() {
       requestedTool === 'mina' ||
       requestedTool === 'compare' ||
       requestedTool === 'portfolio';
+    if (requestedReferenceId) {
+      const reference = REFERENCE_FUNDS.find(
+        (fund) => fund.id === requestedReferenceId,
+      );
+      if (reference) {
+        queueMicrotask(() => {
+          setSelectedReferenceFund(reference);
+          setSelectedFiFund(null);
+          setQuery(reference.name);
+          scrollAfterRender('fondfakta');
+        });
+      }
+    }
     if (!requestedFund && !fiSection) return;
 
     void loadFiData().then((dataset) => {
@@ -274,6 +318,7 @@ function FundHome() {
 
   function selectFund(fund: FiFund, scroll = true) {
     setSelectedFiFund(fund);
+    setSelectedReferenceFund(null);
     setQuery(fund.name);
     setSearchMessage('');
     setVisibleResults(6);
@@ -290,10 +335,35 @@ function FundHome() {
     }
   }
 
+  function selectReferenceFund(fund: ReferenceFund) {
+    setSelectedReferenceFund(fund);
+    setSelectedFiFund(null);
+    setQuery(fund.name);
+    setSearchMessage('');
+    setVisibleResults(6);
+    const nextUrl = `${window.location.pathname}?ppmFund=${encodeURIComponent(fund.id)}#fondfakta`;
+    window.history.replaceState(null, '', nextUrl);
+    requestAnimationFrame(() => {
+      const heading = document.getElementById('reference-fund-title');
+      heading?.focus({ preventScroll: true });
+      document
+        .getElementById('fondfakta')
+        ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+  }
+
   async function runAnalysis(event?: SubmitEvent<HTMLFormElement>) {
     event?.preventDefault();
     if (normalizeFundSearch(query).length < 2) {
-      setSearchMessage('Skriv minst två tecken, ett fondnamn eller ISIN.');
+      setSearchMessage(
+        'Skriv minst två tecken, ett fondnamn, ISIN eller fondnummer.',
+      );
+      return;
+    }
+
+    const referenceMatch = resolveReferenceFund(REFERENCE_FUNDS, query);
+    if (referenceMatch) {
+      selectReferenceFund(referenceMatch);
       return;
     }
 
@@ -311,11 +381,14 @@ function FundHome() {
       return;
     }
 
-    const matches = searchFiFunds(dataset.funds, query);
+    const matches = [
+      ...searchReferenceFunds(REFERENCE_FUNDS, query),
+      ...searchFiFunds(dataset.funds, query),
+    ];
     setSearchMessage(
       matches.length > 1
         ? `${matches.length} fonder matchar. Välj rätt fond i listan — ingen fond väljs automatiskt.`
-        : 'Ingen träff i vårt FI-underlag. Prova ett annat namn eller ISIN. Fonden kan saknas i datakällan.',
+        : 'Ingen träff i våra underlag. Prova ett annat namn, ISIN eller fondnummer. Fonden kan saknas i datakällorna.',
     );
   }
 
@@ -380,14 +453,14 @@ function FundHome() {
           <div className="mx-auto max-w-[1440px] px-5 py-9 lg:px-8 lg:py-11">
             <div className="mb-6 max-w-3xl">
               <div className="eyebrow">
-                <Sparkles aria-hidden="true" /> Rapporterade fondinnehav från
-                Finansinspektionen
+                <Sparkles aria-hidden="true" /> FI-innehav och utvalda utländska
+                fondfakta
               </div>
               <h1>Se vad fonden faktiskt äger.</h1>
               <p>
-                Sök på fondnamn, ISIN eller FI:s fondnummer. Du får en tydlig
-                bild av de största innehaven, koncentrationen och hur stor del
-                av fonden vårt FI-underlag täcker.
+                Sök på fondnamn, ISIN eller fondnummer. Svenska FI-fonder får en
+                innehavsanalys. För utvalda utlandsregistrerade fonder visar vi
+                verifierad fondfakta och rätt källänk.
               </p>
             </div>
 
@@ -412,12 +485,12 @@ function FundHome() {
                   if (normalizeFundSearch(event.target.value).length >= 1)
                     void loadFiData();
                 }}
-                aria-label="Sök efter fond, ISIN eller FI-fondnummer"
+                aria-label="Sök efter fond, ISIN eller fondnummer"
                 aria-describedby="fund-search-help"
                 aria-controls="fund-search-results"
                 aria-autocomplete="list"
                 className="h-12 border-0 bg-transparent px-1 text-base shadow-none focus-visible:ring-0"
-                placeholder="Till exempel Avanza Zero eller ett ISIN…"
+                placeholder="Till exempel Avanza Zero eller BGF World Energy…"
               />
               <Button
                 type="submit"
@@ -425,7 +498,7 @@ function FundHome() {
                 disabled={dataState === 'loading'}
                 className="h-11 rounded-xl bg-[#0f6b4f] px-5 text-white hover:bg-[#0b5b43]"
               >
-                {dataState === 'loading' ? 'Läser underlag…' : 'Visa innehav'}{' '}
+                {dataState === 'loading' ? 'Läser underlag…' : 'Sök fond'}{' '}
                 <ArrowRight aria-hidden="true" />
               </Button>
             </form>
@@ -434,7 +507,8 @@ function FundHome() {
               className="mt-3 text-sm leading-6 text-emerald-950/70"
             >
               Sök med eller utan å, ä och ö, i valfri ordning. LF =
-              Länsförsäkringar och SHB/HB = Handelsbanken.{' '}
+              Länsförsäkringar, SHB/HB = Handelsbanken och BGF = BlackRock. De
+              fyra utländska testfonderna söks även med PPM-fondnummer.{' '}
               {fiDataset
                 ? `${fiDataset.funds.length} fonder ingår i FI-underlaget; hela marknaden ingår inte.`
                 : dataState === 'loading'
@@ -443,41 +517,63 @@ function FundHome() {
                     ? 'FI-underlaget kunde inte läsas in just nu.'
                     : 'Fondlistan laddas när du börjar söka.'}
             </p>
-            {searchResults.length > 0 && (
+            {combinedSearchResults.length > 0 && (
               <>
                 <output
                   className="mt-3 block text-sm text-emerald-950/75"
                   aria-live="polite"
                 >
-                  Visar {Math.min(visibleResults, searchResults.length)} av{' '}
-                  {searchResults.length} träffar
+                  Visar {Math.min(visibleResults, combinedSearchResults.length)}{' '}
+                  av {combinedSearchResults.length} träffar
                 </output>
                 <ul
                   id="fund-search-results"
                   className="fund-results"
                   aria-label="Sökresultat"
                 >
-                  {searchResults.slice(0, visibleResults).map((fund) => (
-                    <li key={fund.id} className="fund-result-row">
-                      <button
-                        type="button"
-                        className="fund-result-open"
-                        onClick={() => selectFund(fund)}
+                  {combinedSearchResults
+                    .slice(0, visibleResults)
+                    .map((result) => (
+                      <li
+                        key={`${result.kind}:${result.fund.id}`}
+                        className="fund-result-row"
                       >
-                        <span>
-                          <strong>{fund.name}</strong>
-                          <small>{fund.company}</small>
-                        </span>
-                        <code>{fund.isin ?? `FI-${fund.instituteNumber}`}</code>
-                      </button>
-                      <FavoriteButton
-                        fund={{ source: 'fi', id: fund.id, name: fund.name }}
-                        compact
-                      />
-                    </li>
-                  ))}
+                        <button
+                          type="button"
+                          className="fund-result-open"
+                          onClick={() =>
+                            result.kind === 'fi'
+                              ? selectFund(result.fund)
+                              : selectReferenceFund(result.fund)
+                          }
+                        >
+                          <span>
+                            <strong>{result.fund.name}</strong>
+                            <small>
+                              {result.kind === 'fi'
+                                ? result.fund.company
+                                : `${result.fund.category} · PPM-fondfakta`}
+                            </small>
+                          </span>
+                          <code>
+                            {result.kind === 'fi'
+                              ? (result.fund.isin ??
+                                `FI-${result.fund.instituteNumber}`)
+                              : `PPM ${result.fund.id}`}
+                          </code>
+                        </button>
+                        <FavoriteButton
+                          fund={{
+                            source: result.kind === 'fi' ? 'fi' : 'ppm',
+                            id: result.fund.id,
+                            name: result.fund.name,
+                          }}
+                          compact
+                        />
+                      </li>
+                    ))}
                 </ul>
-                {visibleResults < searchResults.length && (
+                {visibleResults < combinedSearchResults.length && (
                   <Button
                     type="button"
                     variant="outline"
@@ -485,8 +581,8 @@ function FundHome() {
                     aria-controls="fund-search-results"
                     onClick={() => setVisibleResults((count) => count + 12)}
                   >
-                    Visa fler träffar ({searchResults.length - visibleResults}{' '}
-                    kvar)
+                    Visa fler träffar (
+                    {combinedSearchResults.length - visibleResults} kvar)
                   </Button>
                 )}
               </>
@@ -497,9 +593,9 @@ function FundHome() {
                   className="block text-sm leading-6 text-emerald-950/80"
                   aria-live="polite"
                 >
-                  Ingen exakt träff i vårt FI-underlag. Prova ISIN, fondnummer
-                  eller färre sökord. Specialfonder och utlandsregistrerade
-                  fonder kan saknas — det betyder inte att fonden inte finns.
+                  Ingen exakt träff i våra underlag. Prova ISIN, fondnummer
+                  eller färre sökord. Många utlandsregistrerade fonder saknas
+                  fortfarande — det betyder inte att fonden inte finns.
                 </output>
                 {suggestedResults.length > 0 && (
                   <>
@@ -573,6 +669,87 @@ function FundHome() {
             </div>
           </div>
         </section>
+
+        {selectedReferenceFund && (
+          <section id="fondfakta" className="analysis-section scroll-mt-4">
+            <div className="mx-auto max-w-[1440px] px-5 py-8 lg:px-8 lg:py-10">
+              <article className="rounded-[1.5rem] border border-emerald-900/10 bg-white p-6 shadow-sm md:p-8">
+                <div className="flex flex-col justify-between gap-5 md:flex-row md:items-start">
+                  <div className="max-w-3xl">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <h2
+                        id="reference-fund-title"
+                        tabIndex={-1}
+                        className="text-2xl font-semibold tracking-[-0.03em]"
+                      >
+                        {selectedReferenceFund.name}
+                      </h2>
+                      <Badge
+                        variant="outline"
+                        className="border-sky-300 bg-sky-50 text-sky-800"
+                      >
+                        Utlandsregistrerad · PPM-fondfakta
+                      </Badge>
+                      <FavoriteButton
+                        fund={{
+                          source: 'ppm',
+                          id: selectedReferenceFund.id,
+                          name: selectedReferenceFund.name,
+                        }}
+                      />
+                    </div>
+                    <p className="text-base text-muted-foreground">
+                      {selectedReferenceFund.type} ·{' '}
+                      {selectedReferenceFund.category} · PPM-fondnummer{' '}
+                      {selectedReferenceFund.id}
+                    </p>
+                    {selectedReferenceFund.officialName !==
+                      selectedReferenceFund.name && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Namn i Pensionsmyndighetens fondtorg:{' '}
+                        <strong>{selectedReferenceFund.officialName}</strong>
+                      </p>
+                    )}
+                    <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+                      <h3 className="font-semibold">
+                        Innehavsanalys saknas ännu
+                      </h3>
+                      <p className="mt-2 leading-7">
+                        Fonden finns inte i Finansinspektionens svenska
+                        innehavsregister. SuperSafe visar därför inga
+                        uppskattade eller påhittade innehav. Kontrollera aktuell
+                        inriktning, risk, avgift och andelsklass i det
+                        officiella fondfaktabladet.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-3">
+                    <Button
+                      nativeButton={false}
+                      render={
+                        <a
+                          href={referenceFundUrl(selectedReferenceFund)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Öppna officiell fondfakta för ${selectedReferenceFund.name} hos Pensionsmyndigheten`}
+                        />
+                      }
+                    >
+                      Öppna officiell fondfakta{' '}
+                      <ExternalLink aria-hidden="true" />
+                    </Button>
+                    <a
+                      className="share-fund-link"
+                      href={`?ppmFund=${encodeURIComponent(selectedReferenceFund.id)}#fondfakta`}
+                    >
+                      Länk till fonden
+                    </a>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+        )}
 
         {selectedFund && selectedFiFund && analysis && (
           <section id="fondanalys" className="analysis-section scroll-mt-4">
