@@ -30,6 +30,7 @@ import {
   MyFunds,
 } from '@/components/fund-favorites';
 import { ResultExplanation } from '@/components/result-explanation';
+import { ReferenceFundHoldings } from '@/components/reference-fund-holdings';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -710,16 +711,13 @@ function FundHome() {
                         <strong>{selectedReferenceFund.officialName}</strong>
                       </p>
                     )}
-                    <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
-                      <h3 className="font-semibold">
-                        Innehavsanalys saknas ännu
-                      </h3>
+                    <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
+                      <h3 className="font-semibold">Verifierade fondinnehav</h3>
                       <p className="mt-2 leading-7">
-                        Fonden finns inte i Finansinspektionens svenska
-                        innehavsregister. SuperSafe visar därför inga
-                        uppskattade eller påhittade innehav. Kontrollera aktuell
-                        inriktning, risk, avgift och andelsklass i det
-                        officiella fondfaktabladet.
+                        Innehaven kommer från fondbolagets egen publicering och
+                        visas med rapportdatum och faktisk täckning. Det gör att
+                        en topp 10-lista aldrig presenteras som en komplett
+                        portfölj.
                       </p>
                     </div>
                   </div>
@@ -746,6 +744,7 @@ function FundHome() {
                     </a>
                   </div>
                 </div>
+                <ReferenceFundHoldings fund={selectedReferenceFund} />
               </article>
             </div>
           </section>

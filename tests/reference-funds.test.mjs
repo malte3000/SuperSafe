@@ -40,3 +40,31 @@ test('reference links use official Pensionsmyndigheten fund facts', () => {
     'https://www.pensionsmyndigheten.se/service/fondtorg/fond/661066',
   );
 });
+
+test('reference funds expose dated, attributed holdings without overstating coverage', () => {
+  for (const fund of REFERENCE_FUNDS) {
+    assert.match(fund.portfolio.asOf, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(fund.portfolio.sourceUrl, /^https:\/\//);
+    assert.ok(fund.portfolio.holdings.length > 0);
+    assert.ok(
+      fund.portfolio.holdings.every(
+        (holding) => holding.name && holding.weight > 0 && holding.weight <= 100,
+      ),
+    );
+  }
+
+  const odin = resolveReferenceFund(
+    REFERENCE_FUNDS,
+    'ODIN Emerging Markets C SEK',
+  );
+  assert.equal(odin?.portfolio.scope, 'complete-equities');
+  assert.equal(odin?.portfolio.holdings.length, 41);
+
+  const health = resolveReferenceFund(
+    REFERENCE_FUNDS,
+    'BGF World Healthscience A2',
+  );
+  assert.equal(health?.portfolio.scope, 'top-ten');
+  assert.equal(health?.portfolio.reportedHoldingsCount, 90);
+  assert.equal(health?.portfolio.holdings.length, 10);
+});
